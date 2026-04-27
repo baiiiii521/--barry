@@ -262,8 +262,23 @@ export default function App() {
       {activeTab === 'home' && (
         <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
           <div className="px-4 pt-6 pb-2 flex flex-col gap-2">
+            
+            {/* Header / Brand */}
+            <div className="flex items-center gap-3 pt-2 pb-6 max-w-5xl mx-auto w-full md:px-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand/20 to-brand/5 border border-brand/30 flex items-center justify-center text-brand shadow-[0_0_15px_rgba(0,255,65,0.2)] shrink-0">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                   <path d="M12 2v20" />
+                   <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                 </svg>
+              </div>
+              <div className="flex flex-col">
+                <h1 className="text-lg font-bold tracking-tight text-primary leading-none mb-1">TimeMeter</h1>
+                <p className="text-[10px] text-brand font-mono uppercase tracking-widest font-bold leading-none">Pay Per Second</p>
+              </div>
+            </div>
+
             {/* Date Card */}
-            <div className="bg-card rounded-2xl p-4 md:p-6 lg:p-8 border border-app flex flex-col shadow-sm relative overflow-hidden">
+            <div className="bg-gradient-to-br from-card to-card-inner rounded-[32px] p-5 md:p-8 border-[1.5px] border-app flex flex-col shadow-xl relative overflow-hidden">
               <div className="flex flex-row items-center justify-between mb-3">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex flex-col">
@@ -362,7 +377,7 @@ export default function App() {
              {/* Top Row: Clock & Punch Out vs Current Income (Side by side) */}
              <div className="flex gap-3 md:gap-5">
                {/* Left: Clock */}
-               <div className="w-[140px] md:w-[180px] rounded-3xl bg-card border border-app p-4 flex flex-col items-center justify-between shadow-xl relative overflow-hidden">
+               <div className="w-[140px] md:w-[180px] rounded-[32px] bg-card border-[1.5px] border-app p-4 flex flex-col items-center justify-between shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-brand/10 blur-2xl rounded-full mix-blend-screen pointer-events-none" />
                   
                   <div className="relative w-24 h-24 mb-3 drop-shadow-[0_0_10px_rgba(0,255,65,0.2)] shrink-0">
@@ -431,7 +446,9 @@ export default function App() {
                </div>
 
                {/* Right: Income Main Metrics */}
-               <div className="flex-1 rounded-3xl bg-card border border-app p-4 flex flex-col shadow-xl justify-between">
+               <div className="flex-1 rounded-[32px] bg-gradient-to-b from-card to-card-inner border-[1.5px] border-app p-5 flex flex-col shadow-2xl justify-between relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full pointer-events-none" />
+
                   <div>
                     <div className="flex items-center justify-between text-xs text-secondary mb-2">
                        <span>今日已赚</span>
@@ -449,7 +466,7 @@ export default function App() {
                          key={earnedToday}
                          initial={{ opacity: 0.8, y: 2 }}
                          animate={{ opacity: 1, y: 0 }}
-                         className="text-[34px] font-mono font-bold text-brand tracking-tighter leading-none"
+                         className="text-4xl md:text-5xl font-mono font-bold text-brand tracking-tighter leading-none"
                        >
                          {hide(formatMoney(earnedToday / ex))}
                        </motion.span>
