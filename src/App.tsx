@@ -14,6 +14,16 @@ import {
   ChevronRight,
   ChevronLeft,
   TrendingUp,
+  Clock, // Pomodoro icon
+  Timer, // Better Pomodoro icon
+  Plus,  // Memo
+  Trash2, // Memo delete
+  Edit2,  // Memo edit
+  CheckCircle,
+  X,
+  Play,
+  Pause,
+  Square
 } from 'lucide-react';
 
 const MILK_TEA_PRICE = 20;
@@ -129,6 +139,66 @@ export default function App() {
   }, [config]);
 
 
+
+
+  // === Pomodoro State ===
+  const [pomodoroLength, setPomodoroLength] = useState(25); // in minutes
+  const [pomodoroTimeLeft, setPomodoroTimeLeft] = useState(25 * 60); // in seconds
+  const [isPomodoroActive, setIsPomodoroActive] = useState(false);
+  const [pomodoroTask, setPomodoroTask] = useState("");
+  const [completedPomodoros, setCompletedPomodoros] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (isPomodoroActive && pomodoroTimeLeft > 0) {
+      interval = setInterval(() => {
+        setPomodoroTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (isPomodoroActive && pomodoroTimeLeft === 0) {
+      setIsPomodoroActive(false);
+      setCompletedPomodoros(prev => prev + 1);
+      if ('Notification' in window && Notification.permission === "granted") {
+         new Notification("番茄钟完成", { body: "休息一下吧！" });
+      } else {
+         alert("番茄钟完成，休息一下吧！");
+      }
+    }
+    return () => clearInterval(interval);
+  }, [isPomodoroActive, pomodoroTimeLeft]);
+
+  const togglePomodoro = () => {
+    if (!isPomodoroActive && 'Notification' in window && Notification.permission === "default") {
+       Notification.requestPermission().catch(()=>{});
+    }
+    setIsPomodoroActive(!isPomodoroActive);
+  };
+
+  const resetPomodoro = () => {
+    setIsPomodoroActive(false);
+    setPomodoroTimeLeft(pomodoroLength * 60);
+  };
+  
+  const handlePomodoroLengthChange = (mins) => {
+     setPomodoroLength(mins);
+     setPomodoroTimeLeft(mins * 60);
+     setIsPomodoroActive(false);
+  };
+
+  // === Memo State ===
+  const [memos, setMemos] = useState(() => {
+    try {
+      const saved = localStorage.getItem('niuma_memos');
+      if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem('niuma_memos', JSON.stringify(memos));
+  }, [memos]);
+
+  const [selectedMemoDate, setSelectedMemoDate] = useState(null);
+  const [newMemoText, setNewMemoText] = useState("");
 
   const [activeTab, setActiveTab] = useState('home');
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -261,50 +331,67 @@ export default function App() {
       
       {activeTab === 'home' && (
         <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
-          <div className="px-4 pt-6 pb-2 flex flex-col gap-2">
+          <div className="px-4 md:px-8 pt-6 pb-2 flex flex-col gap-4 max-w-5xl mx-auto w-full">
             
-            {/* Header / Brand */}
-            <div className="flex items-center gap-3 pt-2 pb-6 max-w-5xl mx-auto w-full md:px-0">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand/20 to-brand/5 border border-brand/30 flex items-center justify-center text-brand shadow-[0_0_15px_rgba(0,255,65,0.2)] shrink-0">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                   <path d="M12 2v20" />
-                   <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                 </svg>
+            {/* Header & Date Row */}
+            <div className="flex flex-row items-center justify-between gap-2 pb-2 mt-2">
+              {/* Brand & Logo */}
+              <div className="flex items-center gap-2 md:gap-3 shrink-0">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-brand/20 via-card to-brand/5 border border-brand/30 flex items-center justify-center text-brand shadow-[0_0_20px_rgba(0,255,65,0.25)] shrink-0 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 drop-shadow-md">
+                     <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" />
+                     <line x1="12" y1="22" x2="12" y2="15.5" />
+                     <polyline points="22 8.5 12 15.5 2 8.5" />
+                     <polyline points="2 15.5 12 8.5 22 15.5" />
+                     <line x1="12" y1="2" x2="12" y2="8.5" />
+                     <circle cx="12" cy="12" r="1.5" className="fill-brand stroke-brand" />
+                   </svg>
+                </div>
+                <div className="flex flex-col justify-center shrink-0">
+                  <h1 className="text-lg md:text-[22px] font-bold tracking-tight text-primary leading-none mb-1.5 flex items-center gap-2">
+                    TimeMeter
+                    <span className="text-[9px] bg-brand/10 text-brand px-1.5 py-0.5 rounded font-mono font-medium border border-brand/20 hidden md:inline-flex">BETA</span>
+                  </h1>
+                  <p className="text-[9px] md:text-[10px] text-brand/90 font-mono uppercase tracking-[0.2em] font-bold leading-none">Pay Per Sec</p>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <h1 className="text-lg font-bold tracking-tight text-primary leading-none mb-1">TimeMeter</h1>
-                <p className="text-[10px] text-brand font-mono uppercase tracking-widest font-bold leading-none">Pay Per Second</p>
+
+              {/* Date & Theme Toggle */}
+              <div className="flex items-center gap-1.5 md:gap-3 bg-card-inner/60 backdrop-blur-md pl-2 md:pl-4 pr-1.5 md:pr-2 py-1 md:py-1.5 rounded-2xl border border-app shadow-sm min-w-0">
+                <div className="flex flex-col text-right truncate">
+                  <div className="text-[10px] md:text-sm font-semibold text-primary mb-0.5 flex items-center gap-1 md:gap-2 justify-end truncate">
+                    <span className="text-[9px] md:text-xs text-secondary font-medium hidden md:inline-block">周{['日','一','二','三','四','五','六'][localTime.getDay()]}</span>
+                    <span className="truncate">{localTime.getFullYear()}-{String(localTime.getMonth() + 1).padStart(2, '0')}-{String(localTime.getDate()).padStart(2, '0')}</span>
+                  </div>
+                  <div className="text-[8px] md:text-[10px] text-secondary/80 font-medium tracking-wide truncate mt-0.5 md:mt-0">
+                     {lunarDateStr}
+                  </div>
+                </div>
+                <div className="w-[1px] h-6 md:h-7 bg-app block mx-0.5 md:mx-1 shrink-0"></div>
+                <button onClick={() => setIsLightMode(!isLightMode)} className="w-7 h-7 md:w-8 md:h-8 bg-card rounded-xl border border-app shadow-inner text-primary flex items-center justify-center transition-all hover:scale-105 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-brand shrink-0">
+                   {isLightMode ? (
+                     <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500 group-hover:rotate-45 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                   ) : (
+                     <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-brand group-hover:-rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                   )}
+                </button>
               </div>
             </div>
 
-            {/* Date Card */}
-            <div className="bg-gradient-to-br from-card to-card-inner rounded-[32px] p-5 md:p-8 border-[1.5px] border-app flex flex-col shadow-xl relative overflow-hidden">
-              <div className="flex flex-row items-center justify-between mb-3">
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex flex-col">
-                    <div className="text-sm font-medium text-primary mb-0.5">
-                      {localTime.getFullYear()}年{localTime.getMonth() + 1}月{localTime.getDate()}日 
-                      <span className="ml-2 text-xs text-secondary">周{['日','一','二','三','四','五','六'][localTime.getDay()]}</span>
-                    </div>
-                    <div className="text-[11px] text-secondary flex items-center gap-2">
-                       <span>{lunarDateStr}</span>
-                    </div>
-                  </div>
-                  <button onClick={() => setIsLightMode(!isLightMode)} className="p-1.5 px-2.5 bg-card-inner rounded-full border border-app shadow-sm text-primary flex items-center gap-1 text-[11px] transition-transform hover:scale-105 active:scale-95">{isLightMode ? '🌙' : '☀️'}</button>
+            {/* Daily Work Progress */}
+            <div className="bg-gradient-to-r from-card to-card-inner rounded-[24px] p-4 md:p-5 border-[1.5px] border-app flex flex-col shadow-xl relative overflow-hidden mb-2">
+              <div className="w-full flex-col flex gap-2">
+                <div className="flex justify-between items-end text-[11px] font-medium text-tertiary">
+                  <span className="flex items-center gap-1.5 object-contain"><svg className="w-3.5 h-3.5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> <span className="tracking-wide">今日打工进度</span></span>
+                  <span className="text-primary font-mono bg-card-inner px-2 py-0.5 rounded-full border border-app shadow-sm">{isRestDay ? '周末躺平' : nowSecs < startSecs ? '还未上班' : nowSecs > endSecs ? '已下班' : `${((workSecondsToday / (endSecs - startSecs - (config.hasLunchBreak ? lunchEndSecs - lunchStartSecs : 0))) * 100).toFixed(1)}%`}</span>
                 </div>
-              </div>
-              
-              {/* Daily Work Progress */}
-              <div className="w-full flex-col flex gap-1.5 mt-1">
-                <div className="flex justify-between text-[10px] text-tertiary">
-                  <span>今日打工进度</span>
-                  <span>{isRestDay ? '周末躺平' : nowSecs < startSecs ? '还未上班' : nowSecs > endSecs ? '已下班' : `${((workSecondsToday / (endSecs - startSecs - (config.hasLunchBreak ? lunchEndSecs - lunchStartSecs : 0))) * 100).toFixed(1)}%`}</span>
-                </div>
-                <div className="h-1.5 bg-card-inner rounded-full overflow-hidden border border-app">
+                <div className="h-2 bg-card-inner/80 rounded-full overflow-hidden border border-app/50 relative">
                    <div 
-                     className="h-full bg-brand shadow-[0_0_8px_rgba(0,255,65,0.4)] transition-all duration-1000" 
+                     className="absolute top-0 left-0 h-full bg-gradient-to-r from-brand/60 to-brand shadow-[0_0_10px_rgba(0,255,65,0.6)] transition-all duration-1000" 
                      style={{ width: `${nowSecs < startSecs ? 0 : nowSecs > endSecs ? 100 : ((workSecondsToday / (endSecs - startSecs - (config.hasLunchBreak ? lunchEndSecs - lunchStartSecs : 0))) * 100)}%` }} 
-                   />
+                   >
+                   </div>
                 </div>
               </div>
             </div>
@@ -941,7 +1028,89 @@ export default function App() {
         </div>
       )}
 
-      {activeTab === 'calendar' && (
+      
+      {activeTab === 'pomodoro' && (
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 pt-6 pb-24 absolute inset-0 top-0 z-40 bg-card-inner md:rounded-3xl max-w-4xl mx-auto w-full">
+           <div className="flex flex-col items-center justify-center h-full max-h-[800px]">
+             
+             <div className="mb-8 w-full max-w-sm text-center">
+               <h2 className="text-2xl font-bold tracking-tight text-primary">沉浸番茄钟</h2>
+               <p className="text-xs text-secondary mt-1 font-medium">专注一炷香，干完去放飞</p>
+             </div>
+
+             <div className="w-full max-w-sm bg-card border border-app rounded-[32px] p-6 shadow-2xl relative overflow-hidden flex flex-col items-center">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full pointer-events-none" />
+                 
+                 <div className="relative w-48 h-48 mb-6 flex items-center justify-center shrink-0">
+                     <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                       <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" className="text-app-strong" strokeWidth="2" strokeDasharray="1 4" />
+                       <circle 
+                         cx="50" cy="50" r="46" fill="none" 
+                         stroke="currentColor" strokeWidth="4" 
+                         className={(isPomodoroActive || pomodoroTimeLeft !== pomodoroLength * 60) ? "text-brand" : "text-app"}
+                         strokeDasharray={289} 
+                         strokeDashoffset={289 - (289 * (pomodoroTimeLeft / (pomodoroLength * 60)))} 
+                         strokeLinecap="round" 
+                         style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease' }}
+                       />
+                     </svg>
+                     <div className="text-5xl font-mono font-bold text-primary tabular-nums tracking-tighter">
+                       {pad0(Math.floor(pomodoroTimeLeft / 60))}:{pad0(pomodoroTimeLeft % 60)}
+                     </div>
+                 </div>
+
+                 {/* task input */}
+                 <div className="w-full mb-6">
+                    <input 
+                      type="text" 
+                      value={pomodoroTask}
+                      onChange={(e) => setPomodoroTask(e.target.value)}
+                      placeholder="几炷香时间我将完成..." 
+                      className="w-full bg-card-inner border border-app rounded-xl p-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-brand shadow-inner text-primary placeholder:text-tertiary"
+                    />
+                 </div>
+
+                 {/* buttons */}
+                 <div className="flex items-center gap-4">
+                    {!isPomodoroActive && pomodoroTimeLeft === pomodoroLength * 60 ? (
+                       <button onClick={togglePomodoro} className="w-16 h-16 bg-brand text-card rounded-2xl flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all">
+                         <Play size={28} className="ml-1" />
+                       </button>
+                    ) : (
+                       <>
+                         <button onClick={togglePomodoro} className="w-14 h-14 bg-card-inner border border-app text-primary rounded-2xl flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all">
+                           {isPomodoroActive ? <Pause size={24} /> : <Play size={24} className="ml-1" />}
+                         </button>
+                         <button onClick={resetPomodoro} className="w-14 h-14 bg-card-inner border border-app text-red-500 rounded-2xl flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all">
+                           <Square size={20} fill="currentColor" />
+                         </button>
+                       </>
+                    )}
+                 </div>
+             </div>
+
+             {/* Presets */}
+             <div className="mt-8 flex gap-3 text-xs">
+                <button onClick={() => handlePomodoroLengthChange(25)} className={`px-4 py-2 rounded-full border ${pomodoroLength === 25 ? 'bg-brand/10 border-brand/30 text-brand font-bold' : 'bg-card border-app text-secondary hover:text-primary'}`}>
+                  25分钟
+                </button>
+                <button onClick={() => handlePomodoroLengthChange(50)} className={`px-4 py-2 rounded-full border ${pomodoroLength === 50 ? 'bg-brand/10 border-brand/30 text-brand font-bold' : 'bg-card border-app text-secondary hover:text-primary'}`}>
+                  50分钟
+                </button>
+                <button onClick={() => handlePomodoroLengthChange(90)} className={`px-4 py-2 rounded-full border ${pomodoroLength === 90 ? 'bg-brand/10 border-brand/30 text-brand font-bold' : 'bg-card border-app text-secondary hover:text-primary'}`}>
+                  90分钟
+                </button>
+             </div>
+
+             {completedPomodoros > 0 && (
+                <div className="mt-6 text-sm text-secondary flex items-center gap-2">
+                   今日已集齐 <span className="text-brand font-bold">{completedPomodoros}</span> 个番茄 🍅
+                </div>
+             )}
+           </div>
+        </div>
+      )}
+{activeTab === 'calendar' && (
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 py-8 space-y-4 pb-24 absolute inset-0 top-0 bg-card-inner z-40 md:rounded-3xl max-w-4xl mx-auto w-full">
            <div className="flex items-center justify-between mt-2 mb-2">
               <button onClick={() => setActiveTab('home')} className="p-2 bg-card rounded-full border border-app text-primary">
@@ -1056,11 +1225,21 @@ export default function App() {
                     const isToday = date === localTime.getDate() && calendarDate.getMonth() === localTime.getMonth() && calendarDate.getFullYear() === localTime.getFullYear();
                     
                     return (
-                       <div key={date} className={`h-14 flex flex-col items-center justify-center rounded-lg border transition-all cursor-pointer hover:scale-[1.02] overflow-hidden ${
+                       <div key={date} 
+        onClick={() => setSelectedMemoDate(`${calendarDate.getFullYear()}-${pad0(calendarDate.getMonth() + 1)}-${pad0(date)}`)}
+        className={`h-14 flex flex-col items-center justify-center rounded-lg border transition-all cursor-pointer hover:scale-[1.02] overflow-hidden relative ${
                           isToday ? 'bg-brand/20 border-brand shadow-md relative' : 
                           isRest ? 'bg-card border-transparent' : 'bg-card-inner border-app shadow-sm'
-                       }`}>
-                          {isToday && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-app"></div>}
+                       }`}
+     >
+                          {isToday && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full"></div>}
+   {memos[`${calendarDate.getFullYear()}-${pad0(calendarDate.getMonth() + 1)}-${pad0(date)}`] && memos[`${calendarDate.getFullYear()}-${pad0(calendarDate.getMonth() + 1)}-${pad0(date)}`].length > 0 && (
+       <div className="absolute top-1 left-1 flex gap-0.5 max-w-[16px] flex-wrap">
+          {memos[`${calendarDate.getFullYear()}-${pad0(calendarDate.getMonth() + 1)}-${pad0(date)}`].slice(0,3).map((m, idx) => (
+             <div key={idx} className={`w-1 h-1 rounded-full ${m.completed ? 'bg-brand/40' : 'bg-brand'}`}></div>
+          ))}
+       </div>
+   )}
                           <span className={`text-[15px] font-bold mb-0.5 ${isToday ? 'text-primary' : (isRest?'text-secondary':'text-primary')}`}>{date}</span>
                           {holidayName ? (
                             <span className="text-[7px] text-[#ff6f51] leading-tight text-center truncate px-0.5 w-full">{holidayName}</span>
@@ -1072,41 +1251,108 @@ export default function App() {
                  })}
               </div>
               <div className="text-center mt-5 text-[11px] text-tertiary">
-                 提示：双击日期可切换工作日/休息日状态
+                 提示：点击日期进入备忘录
               </div>
            </div>
         </div>
       )}
 
-      {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'data' && activeTab !== 'calendar' && (
-        <div className="flex-1 flex flex-col items-center justify-center pb-24 text-tertiary">
-           <div className="text-5xl mb-3 filter drop-shadow-md">🚧</div>
+      {activeTab !== 'home' && activeTab !== 'pomodoro' && activeTab !== 'profile' && activeTab !== 'data' && activeTab !== 'calendar' && (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-card-inner z-40 absolute inset-0 top-0">
+           <h2 className="text-xl font-bold mb-2">🚧 正在施工</h2>
            <p className="text-sm">功能正在开发中...</p>
-           <p className="text-xs text-gray-600 mt-1">Please come back later</p>
+           <p className="text-xs text-secondary mt-1">Please come back later</p>
         </div>
       )}
 
-      {/* BOTTOM NAV BAR */}
-      <div className="fixed bottom-0 left-0 right-0 w-full md:max-w-4xl lg:max-w-6xl xl:max-w-[1400px] mx-auto bg-card-inner/90 backdrop-blur-lg border-t md:border border-app py-3 md:py-4 px-6 md:px-24 flex justify-between items-center z-50 md:rounded-b-3xl md:rounded-t-none md:bottom-4 xl:rounded-3xl shadow-2xl md:mb-4 xl:mb-0 transition-all duration-300">
-         <NavItem icon={<Home size={24} />} label="首页" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-         <NavItem icon={<CalendarIcon size={24} />} label="日历" active={activeTab === 'calendar'} onClick={() => { setActiveTab('calendar'); setCalendarDate(new Date()); }} />
-         <NavItem icon={<PieChart size={24} />} label="数据" active={activeTab === 'data'} onClick={() => setActiveTab('data')} />
-         <NavItem icon={<Settings size={24} />} label="设定" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
-      </div>
       
+      {/* Memo Modal */}
+      {selectedMemoDate && (
+         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-4 md:p-0">
+           <motion.div 
+             initial={{ y: "100%" }} 
+             animate={{ y: 0 }} 
+             className="bg-card w-full max-w-md rounded-t-3xl md:rounded-3xl shadow-2xl border border-app overflow-hidden flex flex-col max-h-[80vh]"
+           >
+             <div className="p-4 md:p-6 border-b border-app flex items-center justify-between bg-card-inner">
+               <div className="flex flex-col">
+                 <h3 className="text-lg font-bold text-primary">备忘录</h3>
+                 <p className="text-xs text-secondary">{selectedMemoDate}</p>
+               </div>
+               <button onClick={() => setSelectedMemoDate(null)} className="p-2 border border-app rounded-full text-secondary hover:bg-app hover:text-primary transition-colors">
+                 <X size={16} />
+               </button>
+             </div>
+             
+             <div className="p-4 md:p-6 flex-1 overflow-y-auto space-y-3">
+               {(memos[selectedMemoDate] || []).map((memo, idx) => (
+                 <div key={memo.id} className={`flex items-center justify-between p-3 rounded-xl border ${memo.completed ? 'bg-card-inner border-app/50 opacity-60' : 'bg-card border-app shadow-sm'}`}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                       <button onClick={() => {
+                          const newMemos = {...memos};
+                          newMemos[selectedMemoDate] = [...newMemos[selectedMemoDate]];
+                          newMemos[selectedMemoDate][idx] = {
+                             ...newMemos[selectedMemoDate][idx],
+                             completed: !newMemos[selectedMemoDate][idx].completed
+                          };
+                          setMemos(newMemos);
+                       }} className={`shrink-0 ${memo.completed ? 'text-brand' : 'text-tertiary hover:text-brand'}`}>
+                          <CheckCircle size={18} fill={memo.completed ? "currentColor" : "none"} />
+                       </button>
+                       <span className={`text-sm truncate ${memo.completed ? 'line-through text-secondary' : 'text-primary'}`}>{memo.text}</span>
+                    </div>
+                    <button onClick={() => {
+                          const newMemos = {...memos};
+                          newMemos[selectedMemoDate] = [...newMemos[selectedMemoDate]];
+                          newMemos[selectedMemoDate].splice(idx, 1);
+                          setMemos(newMemos);
+                    }} className="text-red-500/50 hover:text-red-500 shrink-0 p-1">
+                       <Trash2 size={16} />
+                    </button>
+                 </div>
+               ))}
+               {(memos[selectedMemoDate] || []).length === 0 && (
+                 <div className="text-center py-8 text-secondary text-sm">
+                   这里空空如也，添加点什么吧
+                 </div>
+               )}
+             </div>
+
+             <div className="p-4 bg-card-inner border-t border-app">
+               <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!newMemoText.trim()) return;
+                  const newMemos = {...memos};
+                  newMemos[selectedMemoDate] = newMemos[selectedMemoDate] ? [...newMemos[selectedMemoDate]] : [];
+                  newMemos[selectedMemoDate].push({ id: Math.random().toString(), text: newMemoText, completed: false });
+                  setMemos(newMemos);
+                  setNewMemoText("");
+               }} className="flex gap-2">
+                 <input 
+                   type="text" 
+                   value={newMemoText}
+                   onChange={(e) => setNewMemoText(e.target.value)}
+                   placeholder="输入备忘录内容..." 
+                   className="flex-1 bg-card border border-app rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand shadow-inner text-primary"
+                 />
+                 <button type="submit" className="bg-brand text-card p-3 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-md">
+                   <Plus size={18} />
+                 </button>
+               </form>
+             </div>
+           </motion.div>
+         </div>
+      )}
+
+      {/* BOTTOM NAV BAR */}
+      <div className="fixed bottom-0 left-0 right-0 w-full md:max-w-4xl lg:max-w-6xl xl:max-w-[1400px] mx-auto bg-card-inner/90 backdrop-blur-lg border-t md:border border-app py-2 md:py-4 px-4 md:px-16 flex justify-between items-center z-50 md:rounded-b-3xl md:rounded-t-none md:bottom-4 xl:rounded-3xl shadow-2xl md:mb-4 xl:mb-0 transition-all duration-300">
+         <NavItem icon={<Home size={22} />} label="首页" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+         <NavItem icon={<Timer size={22} />} label="番茄钟" active={activeTab === 'pomodoro'} onClick={() => setActiveTab('pomodoro')} />
+         <NavItem icon={<CalendarIcon size={22} />} label="日历" active={activeTab === 'calendar'} onClick={() => { setActiveTab('calendar'); setCalendarDate(new Date()); }} />
+         <NavItem icon={<PieChart size={22} />} label="数据" active={activeTab === 'data'} onClick={() => setActiveTab('data')} />
+         <NavItem icon={<Settings size={22} />} label="设定" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
+      </div>
     </div>
-  );
-}
-
-// --- SUB-COMPONENTS ---
-
-function MenuIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="6" x2="21" y2="6"></line>
-      <line x1="3" y1="12" x2="21" y2="12"></line>
-      <line x1="3" y1="18" x2="21" y2="18"></line>
-    </svg>
   );
 }
 
