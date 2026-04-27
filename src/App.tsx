@@ -438,7 +438,7 @@ export default function App() {
             </div>
           </div>
           {/* Marquee Banner */}
-          <div className="px-4 py-2">
+          <div className="px-4 md:px-8 py-2 max-w-5xl mx-auto w-full">
             <div className="bg-card rounded-full px-3 py-2 text-xs flex items-center justify-between border border-app">
                <div className="flex items-center gap-2 text-yellow-500/80 truncate pr-2">
                   <span>📢</span>
@@ -606,17 +606,17 @@ export default function App() {
                 </div>
 
                 <div className="flex overflow-x-auto no-scrollbar gap-2 pb-1">
-                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">🧋</span>} label="奶茶" value={(earnedToday / MILK_TEA_PRICE).toFixed(1)} unit="杯" color="text-orange-300" />
-                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">☕️</span>} label="咖啡" value={(earnedToday / COFFEE_PRICE).toFixed(1)} unit="杯" color="text-amber-400" />
-                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">⛽️</span>} label="汽油" value={(earnedToday / GAS_PRICE).toFixed(1)} unit="L" color="text-red-400" />
-                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">📱</span>} label="iPhone" value={((earnedToday / IPHONE_PRICE) * 100).toFixed(2)} unit="%" color="text-blue-300" />
-                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">✨</span>} label={config.customItemName} value={(earnedToday / config.customItemPrice).toFixed(2)} unit="个" color="text-purple-400" />
+                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">🧋</span>} label="奶茶" value={hide((earnedToday / MILK_TEA_PRICE).toFixed(1))} unit="杯" color="text-orange-300" />
+                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">☕️</span>} label="咖啡" value={hide((earnedToday / COFFEE_PRICE).toFixed(1))} unit="杯" color="text-amber-400" />
+                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">⛽️</span>} label="汽油" value={hide((earnedToday / GAS_PRICE).toFixed(1))} unit="L" color="text-red-400" />
+                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">📱</span>} label="iPhone" value={hide(((earnedToday / IPHONE_PRICE) * 100).toFixed(2))} unit="%" color="text-blue-300" />
+                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">✨</span>} label={config.customItemName} value={hide((earnedToday / config.customItemPrice).toFixed(2))} unit="个" color="text-purple-400" />
                 </div>
              </div>
           </div>
 
           {/* 4. COUNTDOWN SYSTEM (Horizontal Scroll) */}
-          <div className="px-4 py-2">
+          <div className="px-4 md:px-8 py-2 max-w-5xl mx-auto w-full">
              <div className="flex items-center justify-between mb-3 text-sm">
                 <span className="text-primary font-medium">倒计时</span>
                 <span className="text-xs text-tertiary cursor-pointer flex items-center">全部 <ChevronRight size={12} /></span>
@@ -667,7 +667,7 @@ export default function App() {
           </div>
 
           {/* 5. SLACKING & OVERTIME COST */}
-          <div className="px-4 py-2 mt-2 mb-8 flex flex-col gap-3">
+          <div className="px-4 md:px-8 py-2 mt-2 mb-8 flex flex-col gap-3 max-w-5xl mx-auto w-full">
              <div className="bg-card rounded-2xl p-4 border border-app flex items-center relative overflow-hidden shadow-lg">
                 <div className="w-12 h-12 mr-3 relative z-10 flex items-center justify-center filter drop-shadow-lg text-4xl">🐟</div>
                 
@@ -781,12 +781,22 @@ export default function App() {
                    <div className="text-sm font-mono text-primary">{Math.floor(monthsWorked * currentMonthWorkDays + localTime.getDate())} 天</div>
                 </div>
                 <div className="bg-card-inner p-3 rounded-xl border border-brand/10 flex flex-col justify-center shadow-inner">
-                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🐟</span> 本月累计摸鱼估值</div>
-                   <div className="text-sm font-mono text-brand">{sym} {hide(formatMoney((slackLoss * (localTime.getDate() * 0.7)) / ex))}</div>
+                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🐟</span> 本月摸鱼总收益</div>
+                   <div className="text-sm font-mono text-brand font-bold">{sym} {hide(formatMoney((slackLoss * (localTime.getDate() * 0.7)) / ex))}</div>
                 </div>
                 <div className="bg-card-inner p-3 rounded-xl border border-red-500/10 flex flex-col justify-center shadow-inner">
-                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🏢</span> 本月累计义务加班损失</div>
-                   <div className="text-sm font-mono text-red-500">{sym} {hide(formatMoney((overtimeLoss * (localTime.getDate() * 0.8)) / ex))}</div>
+                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🏢</span> 本月义务加班送钱</div>
+                   <div className="text-sm font-mono text-red-500 font-bold">{sym} {hide(formatMoney((overtimeLoss * (localTime.getDate() * 0.8)) / ex))}</div>
+                </div>
+                <div className="col-span-2 bg-gradient-to-r from-card to-card-inner p-3 rounded-xl border border-app flex justify-between items-center shadow-sm">
+                   <div className="flex flex-col">
+                      <div className="text-[10px] text-tertiary flex items-center gap-1 mb-0.5">💰 精确时薪折算</div>
+                      <div className="text-sm font-mono text-primary">{sym} {hide(formatMoney(hourlyRate / ex))} <span className="text-[9px] text-secondary">/小时</span></div>
+                   </div>
+                   <div className="flex flex-col text-right">
+                      <div className="text-[10px] text-tertiary flex justify-end items-center gap-1 mb-0.5">👑 全国牛马击败率</div>
+                      <div className="text-sm font-mono text-brand">{Math.min(99.9, Math.max(1.0, (config.monthlySalary / 10000) * 80)).toFixed(1)}%</div>
+                   </div>
                 </div>
              </div>
            </div>
@@ -1041,20 +1051,36 @@ export default function App() {
              <div className="w-full max-w-sm bg-card border border-app rounded-[32px] p-6 shadow-2xl relative overflow-hidden flex flex-col items-center">
                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full pointer-events-none" />
                  
-                 <div className="relative w-48 h-48 mb-6 flex items-center justify-center shrink-0">
-                     <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                       <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" className="text-app-strong" strokeWidth="2" strokeDasharray="1 4" />
-                       <circle 
-                         cx="50" cy="50" r="46" fill="none" 
-                         stroke="currentColor" strokeWidth="4" 
-                         className={(isPomodoroActive || pomodoroTimeLeft !== pomodoroLength * 60) ? "text-brand" : "text-app"}
-                         strokeDasharray={289} 
-                         strokeDashoffset={289 - (289 * (pomodoroTimeLeft / (pomodoroLength * 60)))} 
-                         strokeLinecap="round" 
-                         style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease' }}
-                       />
-                     </svg>
-                     <div className="text-5xl font-mono font-bold text-primary tabular-nums tracking-tighter">
+                 <div className="relative w-48 h-48 mb-6 flex items-end justify-center shrink-0">
+                     <div className="relative w-3 h-32 flex flex-col justify-end items-center mb-8">
+                       {/* The stick that burns down */}
+                       <div 
+                         className="w-1.5 bg-gradient-to-t from-[#8E614A] to-[#C39A7F] rounded-t-full relative transition-[height] duration-1000 ease-linear shadow-[inset_0_0_2px_rgba(0,0,0,0.5)]"
+                         style={{ height: `${Math.max(2, (pomodoroTimeLeft / (pomodoroLength * 60)) * 100)}%` }}
+                       >
+                          {/* Glowing tip & Smoke */}
+                          {(isPomodoroActive || pomodoroTimeLeft !== pomodoroLength * 60) && pomodoroTimeLeft > 0 && (
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gradient-to-r from-red-500 to-orange-400 rounded-full shadow-[0_0_8px_rgba(255,165,0,0.8)] animate-pulse">
+                              {/* Smoke effect */}
+                              {isPomodoroActive && (
+                                <motion.div 
+                                  initial={{ opacity: 0, y: 0, scale: 0.8 }}
+                                  animate={{ opacity: [0, 0.5, 0], y: -30, scale: 1.5, x: [0, -10, 10, -5] }}
+                                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                  className="absolute -top-4 left-1/2 -translate-x-1/2 w-4 h-8 bg-gray-300/30 blur-md rounded-full pointer-events-none"
+                                />
+                              )}
+                            </div>
+                          )}
+                       </div>
+                       {/* Stick holder */}
+                       <div className="w-12 h-3 bg-[#4A4A4A] rounded-b-lg border-t-2 border-[#666] shadow-lg shrink-0"></div>
+                     </div>
+
+                     <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                       <div className="text-7xl font-mono font-bold">{pad0(Math.floor(pomodoroTimeLeft / 60))}:{pad0(pomodoroTimeLeft % 60)}</div>
+                     </div>
+                     <div className="absolute bottom-0 text-3xl font-mono font-bold text-primary tabular-nums tracking-tighter filter drop-shadow-md">
                        {pad0(Math.floor(pomodoroTimeLeft / 60))}:{pad0(pomodoroTimeLeft % 60)}
                      </div>
                  </div>
@@ -1268,11 +1294,11 @@ export default function App() {
       
       {/* Memo Modal */}
       {selectedMemoDate && (
-         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-4 md:p-0">
+         <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-4 md:p-0">
            <motion.div 
              initial={{ y: "100%" }} 
              animate={{ y: 0 }} 
-             className="bg-card w-full max-w-md rounded-t-3xl md:rounded-3xl shadow-2xl border border-app overflow-hidden flex flex-col max-h-[80vh]"
+             className="bg-card w-full max-w-md rounded-t-3xl md:rounded-3xl shadow-2xl border border-app overflow-hidden flex flex-col max-h-[85vh]"
            >
              <div className="p-4 md:p-6 border-b border-app flex items-center justify-between bg-card-inner">
                <div className="flex flex-col">
