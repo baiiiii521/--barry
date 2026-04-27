@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --app-bg: #0d0d0d;
+  --card-bg: #141414;
+  --card-inner-bg: #0d0d0d;
+  --border-app: rgba(255, 255, 255, 0.05);
+  --border-app-strong: rgba(255, 255, 255, 0.1);
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --frame-bg: #050505;
+  --frame-border: #1a1a1a;
+  
+  --brand-green: #00FF41;
+  --brand-green-hover: #00cc33;
+}
+
+body.theme-light {
+  --app-bg: #f8f9fa;
+  --card-bg: #ffffff;
+  --card-inner-bg: #f3f4f6;
+  --border-app: rgba(0, 0, 0, 0.08);
+  --border-app-strong: rgba(0, 0, 0, 0.15);
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #9ca3af;
+  --frame-bg: #e5e7eb;
+  --frame-border: #d1d5db;
+  
+  --brand-green: #059669; /* Slightly darker green for light mode contrast */
+  --brand-green-hover: #047857;
+}
+
+body {
+  background-color: var(--frame-bg);
+  transition: background-color 0.3s;
+}
+
+/* Hide scrollbar for horizontal scrolling containers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@layer utilities {
+  .bg-app { background-color: var(--app-bg); }
+  .bg-card { background-color: var(--card-bg); }
+  .bg-card-inner { background-color: var(--card-inner-bg); }
+  .border-app { border-color: var(--border-app); border-width: 1px; }
+  .border-app-strong { border-color: var(--border-app-strong); border-width: 1px; }
+  .text-primary { color: var(--text-primary); }
+  .text-secondary { color: var(--text-secondary); }
+  .text-tertiary { color: var(--text-tertiary); }
+  .text-app { color: var(--app-bg); }
+  .text-card { color: var(--card-bg); }
+  .border-frame { border-color: var(--frame-border); }
+  
+  /* Brand color utilities */
+  .text-brand { color: var(--brand-green); }
+  .bg-brand { background-color: var(--brand-green); }
+  .bg-brand-hover:hover { background-color: var(--brand-green-hover); }
+  .border-brand { border-color: var(--brand-green); }
+}
+
+input[type="date"] {
+  position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
