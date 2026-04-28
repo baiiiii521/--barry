@@ -3,6 +3,57 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Solar } from 'lunar-javascript';
 import Holidays from 'date-holidays';
 import html2canvas from 'html2canvas';
+
+const playAlertSound = (type: string) => {
+  if (!type || type === 'none') return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    if (type === 'beep') {
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      oscillator.start();
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      oscillator.stop(audioCtx.currentTime + 0.3);
+    } else if (type === 'bell') {
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 1.5);
+      gainNode.gain.setValueAtTime(0.7, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 1.5);
+    } else if (type === 'chime') {
+      oscillator.type = 'triangle';
+      oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+      oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2); // E5
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime + 0.2);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 1.0);
+    } else if (type === 'digital') {
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1);
+      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.3);
+    }
+  } catch (e) {
+    console.error("Audio playback failed", e);
+  }
+};
+
 import {
   Settings,
   RefreshCw,
@@ -384,6 +435,9 @@ export default function App() {
       localTimezoneLabel: initialTz.label,
       customItemName: '自定义', 
       customItemPrice: 100,
+      pomodoroStartSound: 'none',
+      pomodoroEndSound: 'bell',
+      pomodoroBreakSound: 'chime',
     };
     try {
       const savedConfig = localStorage.getItem('niuma_config');
@@ -437,6 +491,9 @@ export default function App() {
   const togglePomodoro = () => {
     if (!isPomodoroActive && 'Notification' in window && Notification.permission === "default") {
        Notification.requestPermission().catch(()=>{});
+    }
+    if (!isPomodoroActive) {
+      playAlertSound(config.pomodoroStartSound);
     }
     setIsPomodoroActive(!isPomodoroActive);
   };
@@ -502,6 +559,14 @@ export default function App() {
   const secondRate = minuteRate / 60;
 
   const [isSlacking, setIsSlacking] = useState(false);
+  const [toast, setToast] = useState<{message: string, type: 'info'|'warn'}|null>(null);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   const handleMemoModalClose = useCallback(() => {
     setSelectedMemoDate(null);
@@ -606,6 +671,9 @@ export default function App() {
   const todayDay = localTime.getDay();
   const isRestDay = (config.restDays === 2 && (todayDay === 0 || todayDay === 6)) || (config.restDays === 1 && todayDay === 0);
 
+  const isLunchBreak = config.hasLunchBreak && nowSecs >= lunchStartSecs && nowSecs < lunchEndSecs;
+  const isCurrentlyWorkingTime = !isRestDay && nowSecs >= startSecs && nowSecs < endSecs && !isLunchBreak;
+
   let autoWorkSecs = 0;
   if (!isRestDay && nowSecs > startSecs) {
     autoWorkSecs = Math.min(nowSecs, endSecs) - startSecs;
@@ -621,9 +689,11 @@ export default function App() {
   const lastGlobalTickRef = useRef<number>(Date.now());
   const isSlackingRef = useRef(isSlacking);
   const isOvertimeRef = useRef(isOvertime);
+  const configRef = useRef(config);
   
   isSlackingRef.current = isSlacking;
   isOvertimeRef.current = isOvertime;
+  configRef.current = config;
 
   useEffect(() => {
     lastGlobalTickRef.current = Date.now();
@@ -665,6 +735,7 @@ export default function App() {
             if ('Notification' in window && Notification.permission === "granted") {
                new Notification("番茄钟完成", { body: "时间到，休息一下吧！" });
             }
+            playAlertSound(configRef.current.pomodoroEndSound);
          } else {
             setPomodoroTimeLeft(nextTime);
          }
@@ -678,6 +749,7 @@ export default function App() {
             if ('Notification' in window && Notification.permission === "granted") {
                new Notification("定时提醒", { body: reminderTextRef.current });
             }
+            playAlertSound(configRef.current.pomodoroBreakSound);
          } else {
             setReminderTimeLeft(nextTime);
          }
@@ -802,17 +874,59 @@ export default function App() {
             </div>
 
             {/* Daily Work Progress */}
-            <div className="bg-gradient-to-r from-card to-card-inner rounded-[24px] p-4 md:p-5 border-[1.5px] border-app flex flex-col shadow-xl relative overflow-hidden mb-2">
-              <div className="w-full flex-col flex gap-2">
-                <div className="flex justify-between items-end text-[11px] font-medium text-tertiary">
-                  <span className="flex items-center gap-1.5 object-contain"><svg className="w-3.5 h-3.5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> <span className="tracking-wide">今日打工进度</span></span>
-                  <span className="text-primary font-mono bg-card-inner px-2 py-0.5 rounded-full border border-app shadow-sm">{isRestDay ? '周末躺平' : nowSecs < startSecs ? '还未上班' : nowSecs > endSecs ? '已下班' : `${((workSecondsToday / (endSecs - startSecs - (config.hasLunchBreak ? lunchEndSecs - lunchStartSecs : 0))) * 100).toFixed(1)}%`}</span>
+            <div className="bg-card rounded-[24px] p-5 border border-app shadow-2xl relative overflow-hidden mb-2 group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full pointer-events-none group-hover:bg-brand/10 transition-colors duration-500"></div>
+              <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-card-inner/30 to-transparent pointer-events-none"></div>
+              
+              <div className="w-full flex-col flex gap-2 relative z-10">
+                <div className="flex justify-between items-end pl-1 mb-1">
+                  <span className="flex items-center gap-2 text-[11px] font-bold text-tertiary uppercase tracking-widest">
+                    <div className="w-2 h-2 rounded-full border-[2px] border-brand shadow-[0_0_5px_rgba(0,255,65,0.5)]"></div>
+                    今日进度标尺
+                  </span>
+                  <div className="flex items-end gap-1 font-mono">
+                    <span className="text-brand font-black text-lg tracking-tighter drop-shadow-[0_0_8px_rgba(0,255,65,0.4)] leading-none mt-1">
+                      {isRestDay ? '100' : nowSecs < startSecs ? '0' : nowSecs > endSecs ? '100' : `${((workSecondsToday / Math.max(1, endSecs - startSecs - (config.hasLunchBreak ? lunchEndSecs - lunchStartSecs : 0))) * 100).toFixed(1)}`}
+                    </span>
+                    <span className="text-xs text-brand/80 font-bold mb-[2px]">%</span>
+                  </div>
                 </div>
-                <div className="h-2 bg-card-inner/80 rounded-full overflow-hidden border border-app/50 relative">
+                
+                <div className="relative pt-6 pb-1">
+                   {/* Main progress track */}
+                   <div className="h-4 bg-[#141414] rounded-full overflow-hidden border border-app shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] relative">
+                      <div 
+                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#00cc33] via-[#00FF41] to-[#e4ff00] transition-all duration-1000 ease-linear" 
+                        style={{ width: `${nowSecs < startSecs ? 0 : nowSecs > endSecs ? 100 : ((workSecondsToday / Math.max(1, endSecs - startSecs - (config.hasLunchBreak ? lunchEndSecs - lunchStartSecs : 0))) * 100)}%` }} 
+                      >
+                         {/* Custom striped pattern for progress bar */}
+                         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.5) 4px, rgba(255,255,255,0.5) 8px)' }}></div>
+                         {/* Shine effect */}
+                         <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/30 to-transparent"></div>
+                      </div>
+                   </div>
+
+                   {/* Progress Indicator Icon moving along the track */}
                    <div 
-                     className="absolute top-0 left-0 h-full bg-gradient-to-r from-brand/60 to-brand shadow-[0_0_10px_rgba(0,255,65,0.6)] transition-all duration-1000" 
-                     style={{ width: `${nowSecs < startSecs ? 0 : nowSecs > endSecs ? 100 : ((workSecondsToday / (endSecs - startSecs - (config.hasLunchBreak ? lunchEndSecs - lunchStartSecs : 0))) * 100)}%` }} 
+                     className="absolute top-0 transform -translate-x-1/2 -translate-y-2.5 transition-all duration-1000 ease-linear z-20"
+                     style={{ left: `${nowSecs < startSecs ? 0 : nowSecs > endSecs ? 100 : ((workSecondsToday / Math.max(1, endSecs - startSecs - (config.hasLunchBreak ? lunchEndSecs - lunchStartSecs : 0))) * 100)}%` }}
                    >
+                     <div className="bg-card border-2 border-brand text-[22px] w-11 h-11 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(0,255,65,0.4)] relative bg-gradient-to-br from-card to-card-inner">
+                       <span className="absolute -top-1 -right-1 text-[9px] bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-sm transform -rotate-12 animate-pulse">!</span>
+                       {isRestDay ? '🏖️' : nowSecs < startSecs ? '😴' : nowSecs > endSecs ? '🎉' : isLunchBreak ? '🍚' : '🏃'}
+                     </div>
+                   </div>
+
+                   {/* Timestamps */}
+                   <div className="flex justify-between text-[10px] text-tertiary/60 font-mono mt-3 px-2 font-medium">
+                      <span>{config.startTime}</span>
+                      {config.hasLunchBreak && (
+                        <div className="flex flex-col items-center gap-0.5 text-orange-500/60 relative -mt-1.5 group-hover:text-orange-500 transition-colors">
+                           <span className="text-[8px] bg-orange-500/10 px-1.5 py-0.5 rounded-sm">午休期间</span>
+                           <span>{config.lunchStartTime} - {config.lunchEndTime}</span>
+                        </div>
+                      )}
+                      <span>{config.endTime}</span>
                    </div>
                 </div>
               </div>
@@ -922,8 +1036,8 @@ export default function App() {
                   </div>
 
                   <div className="text-center z-10 w-full mb-3">
-                     <div className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1 inline-block ${isRestDay ? 'text-primary bg-blue-500/10' : nowSecs < startSecs ? 'text-secondary bg-secondary/10' : nowSecs > endSecs ? 'text-brand bg-brand/10' : 'text-primary bg-primary/10'}`}>
-                        {isRestDay ? '周末休息 ✨' : nowSecs < startSecs ? '未上班' : nowSecs > endSecs ? '已下班' : '工作中'}
+                     <div className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1 inline-block ${isRestDay ? 'text-primary bg-blue-500/10' : nowSecs < startSecs ? 'text-secondary bg-secondary/10' : nowSecs > endSecs ? 'text-brand bg-brand/10' : isLunchBreak ? 'text-orange-500 bg-orange-500/10' : 'text-primary bg-primary/10'}`}>
+                        {isRestDay ? '周末休息 ✨' : nowSecs < startSecs ? '还没上班' : nowSecs > endSecs ? '已经下班' : isLunchBreak ? '午休干饭 🍚' : '牛马进行中 ⚡️'}
                      </div>
                      <div className="text-[18px] font-mono font-bold tracking-tight text-primary/90">
                         {pad0(Math.floor(workSecondsToday / 3600))}:
@@ -934,22 +1048,24 @@ export default function App() {
 
                   <div className="w-full mb-1">
                      <div className="bg-card-inner rounded-xl p-1.5 border border-app text-center">
-                        <span className="text-[9px] text-tertiary block mb-0.5">精神状态</span>
+                        <span className="text-[9px] text-tertiary block mb-0.5">牛马指数</span>
                         <span className="text-[11px] font-medium text-primary">
-                          {isRestDay ? "🏖️ 幸福躺平" :
-                           nowSecs > endSecs ? "🎉 满血复活" : 
-                           (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.9 ? "💀 灵魂出窍" :
+                          {isRestDay ? "🏖️ 幸福躺平中" :
+                           nowSecs < startSecs ? "😴 续命睡眠中" :
+                           nowSecs >= endSecs ? "🎉 灵魂归位" : 
+                           isLunchBreak ? "😋 能量补给中" :
+                           (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.9 ? "💀 彻底疯狂" :
                            (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.7 ? "🤯 逐渐暴躁" :
                            (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.4 ? "🔋 电量过半" :
                            (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.2 ? "🤔 陷入沉思" :
-                           "☕️ 能量满满"}
+                           "☕️ 能量回收中"}
                         </span>
                      </div>
                   </div>
 
                   <div className="w-full py-2 rounded-xl flex flex-col items-center justify-center font-black uppercase tracking-tighter bg-card border-none">
-                    <span className={`text-xs ${isRestDay ? 'text-primary' : nowSecs < startSecs ? 'text-secondary' : nowSecs > endSecs ? 'text-brand' : 'text-primary'}`}>
-                      {isRestDay ? '周末愉快 🏖️' : nowSecs < startSecs ? '等待打工' : nowSecs > endSecs ? '下班啦 ✨' : '正在牛马 ⚡️'}
+                    <span className={`text-xs ${isRestDay ? 'text-primary' : nowSecs < startSecs ? 'text-secondary' : nowSecs > endSecs ? 'text-brand' : isLunchBreak ? 'text-orange-500' : 'text-primary'}`}>
+                      {isRestDay ? '周末愉快 🏖️' : nowSecs < startSecs ? '等待打工' : nowSecs > endSecs ? '下班啦 ✨' : isLunchBreak ? '干饭啦 🍚' : '正在牛马 ⚡️'}
                     </span>
                   </div>
                </div>
@@ -1130,7 +1246,13 @@ export default function App() {
                   className={`z-10 ml-2 px-3 py-1.5 text-[11px] rounded-full border flex items-center gap-1 transition-colors ${
                     isSlacking ? 'bg-brand hover:opacity-90 text-app border-transparent' : 'bg-card-inner hover:bg-app text-primary border-app-strong'
                   }`}
-                  onClick={() => setIsSlacking(!isSlacking)}
+                  onClick={() => {
+                    if (!isSlacking && !isCurrentlyWorkingTime) {
+                      setToast({ message: "当前非工作时间，你在自愿加班吗？不算摸鱼哦！", type: 'info' });
+                      return;
+                    }
+                    setIsSlacking(!isSlacking);
+                  }}
                 >
                    {isSlacking ? '正在摸鱼中...' : '开始摸鱼'}
                 </button>
@@ -1547,6 +1669,66 @@ export default function App() {
                </button>
            </div>
 
+           <div className="bg-card rounded-2xl p-5 md:p-8 lg:p-10 border border-app space-y-4 shadow-lg max-w-4xl mx-auto mb-4">
+               <div>
+                  <h3 className="text-sm font-bold text-primary mb-1">提示音设置</h3>
+                  <p className="text-xs text-secondary mb-4">设定番茄钟与提醒的提示音。</p>
+               </div>
+               <div className="grid grid-cols-3 gap-4">
+                  <div>
+                     <label className="text-xs text-secondary mb-1.5 block">番茄钟开始</label>
+                     <select 
+                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-sm focus:border-brand focus:outline-none transition-colors"
+                       value={config.pomodoroStartSound}
+                       onChange={e => {
+                         setConfig({...config, pomodoroStartSound: e.target.value});
+                         if(e.target.value !== 'none') playAlertSound(e.target.value);
+                       }}
+                     >
+                       <option value="none">无</option>
+                       <option value="beep">短促 (Beep)</option>
+                       <option value="bell">清脆 (Bell)</option>
+                       <option value="chime">和弦 (Chime)</option>
+                       <option value="digital">电子 (Digital)</option>
+                     </select>
+                  </div>
+                  <div>
+                     <label className="text-xs text-secondary mb-1.5 block">番茄钟结束</label>
+                     <select 
+                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-sm focus:border-brand focus:outline-none transition-colors"
+                       value={config.pomodoroEndSound}
+                       onChange={e => {
+                         setConfig({...config, pomodoroEndSound: e.target.value});
+                         if(e.target.value !== 'none') playAlertSound(e.target.value);
+                       }}
+                     >
+                       <option value="none">无</option>
+                       <option value="beep">短促 (Beep)</option>
+                       <option value="bell">清脆 (Bell)</option>
+                       <option value="chime">和弦 (Chime)</option>
+                       <option value="digital">电子 (Digital)</option>
+                     </select>
+                  </div>
+                  <div>
+                     <label className="text-xs text-secondary mb-1.5 block">提醒/休息结束</label>
+                     <select 
+                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-sm focus:border-brand focus:outline-none transition-colors"
+                       value={config.pomodoroBreakSound}
+                       onChange={e => {
+                         setConfig({...config, pomodoroBreakSound: e.target.value});
+                         if(e.target.value !== 'none') playAlertSound(e.target.value);
+                       }}
+                     >
+                       <option value="none">无</option>
+                       <option value="beep">短促 (Beep)</option>
+                       <option value="bell">清脆 (Bell)</option>
+                       <option value="chime">和弦 (Chime)</option>
+                       <option value="digital">电子 (Digital)</option>
+                     </select>
+                  </div>
+               </div>
+           </div>
+
            <div className="bg-card rounded-2xl p-5 md:p-8 lg:p-10 border border-app space-y-5 shadow-lg max-w-4xl mx-auto mb-4">
              
                  <div className="pt-4 border-t border-app-strong"></div>
@@ -1622,21 +1804,22 @@ export default function App() {
               <p>Architect & Author</p>
               <p className="font-semibold text-primary">Barry</p>
               <a href="mailto:barry.bai@hotwavehk.com" className="hover:text-brand transition-colors">barry.bai@hotwavehk.com</a>
+              <p className="mt-2 text-[10px] tracking-widest uppercase">Version 1.0.10</p>
            </div>
         </div>
       )}
 
       
       {activeTab === 'pomodoro' && (
-        <div className="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 pt-6 pb-24 absolute inset-0 top-0 z-40 bg-card-inner md:rounded-3xl max-w-4xl mx-auto w-full">
-           <div className="flex flex-col items-center justify-center h-full max-h-[800px]">
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 pt-6 pb-24 bg-card-inner md:rounded-3xl max-w-4xl mx-auto w-full">
+           <div className="flex flex-col items-center justify-center min-h-full py-10">
              
              <div className="mb-8 w-full max-w-sm text-center">
                <h2 className="text-2xl font-bold tracking-tight text-primary">沉浸番茄钟</h2>
                <p className="text-xs text-secondary mt-1 font-medium">专注一炷香，干完去放飞</p>
              </div>
 
-             <div className="w-full max-w-sm bg-card border border-app rounded-[32px] p-6 shadow-2xl relative overflow-hidden flex flex-col items-center">
+             <div className="w-full max-w-sm bg-card border border-app rounded-[32px] p-6 shadow-2xl relative flex flex-col items-center shrink-0">
                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full pointer-events-none" />
                  
                  <div className="relative w-48 h-48 mb-6 flex items-end justify-center shrink-0">
@@ -1666,15 +1849,15 @@ export default function App() {
                      </div>
 
                      <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                       <div className="text-7xl font-mono font-bold">{pad0(Math.floor(pomodoroTimeLeft / 60))}:{pad0(pomodoroTimeLeft % 60)}</div>
+                       <div className="text-7xl font-mono font-bold">{pad0(Math.floor(pomodoroTimeLeft / 60))}:{pad0(Math.floor(pomodoroTimeLeft % 60))}</div>
                      </div>
                      <div className="absolute bottom-0 text-3xl font-mono font-bold text-primary tabular-nums tracking-tighter filter drop-shadow-md">
-                       {pad0(Math.floor(pomodoroTimeLeft / 60))}:{pad0(pomodoroTimeLeft % 60)}
+                       {pad0(Math.floor(pomodoroTimeLeft / 60))}:{pad0(Math.floor(pomodoroTimeLeft % 60))}
                      </div>
                  </div>
 
                  {/* task input */}
-                 <div className="w-full mb-6">
+                 <div className="w-full mb-6 relative z-10">
                     <input 
                       type="text" 
                       value={pomodoroTask}
@@ -1685,7 +1868,7 @@ export default function App() {
                  </div>
 
                  {/* Focus Income Tracker */}
-                 <div className="mb-6 w-full max-w-[200px] flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-brand/5 to-transparent border border-brand/10">
+                 <div className="mb-6 w-full max-w-[200px] flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-brand/5 to-transparent border border-brand/10 relative z-10">
                    <span className="text-[10px] text-tertiary mb-1">本次专注已赚取</span>
                    <span className="text-xl font-mono font-bold text-brand shadow-sm">
                      ¥{formatMoney(((pomodoroLength * 60 - pomodoroTimeLeft) / 60) * minuteRate)}
@@ -1693,20 +1876,34 @@ export default function App() {
                  </div>
 
                  {/* buttons */}
-                 <div className="flex items-center gap-4">
-                    {!isPomodoroActive && pomodoroTimeLeft === pomodoroLength * 60 ? (
-                       <button onClick={togglePomodoro} className="w-16 h-16 bg-brand text-card rounded-2xl flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all">
-                         <Play size={28} className="ml-1" />
+                 <div className="flex items-center gap-4 relative z-20 pb-4">
+                    {!isPomodoroActive && (pomodoroTimeLeft >= pomodoroLength * 60 - 5) ? (
+                       <button 
+                         onClick={togglePomodoro} 
+                         className="px-10 py-5 bg-brand text-[#141414] rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(0,255,65,0.4)] hover:scale-105 active:scale-95 transition-all text-lg font-black"
+                       >
+                         <Play size={24} className="mr-3 fill-current" />
+                         开始专注
                        </button>
                     ) : (
-                       <>
-                         <button onClick={togglePomodoro} className="w-14 h-14 bg-card-inner border border-app text-primary rounded-2xl flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all">
-                           {isPomodoroActive ? <Pause size={24} /> : <Play size={24} className="ml-1" />}
+                       <div className="flex gap-4">
+                         <button 
+                           onClick={togglePomodoro} 
+                           className="px-8 py-4 bg-brand text-[#141414] rounded-2xl flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all font-bold"
+                         >
+                           {isPomodoroActive ? (
+                             <><Pause size={22} className="mr-2 fill-current" /> 暂停</>
+                           ) : (
+                             <><Play size={22} className="mr-2 fill-current" /> 继续</>
+                           )}
                          </button>
-                         <button onClick={resetPomodoro} className="w-14 h-14 bg-card-inner border border-app text-red-500 rounded-2xl flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all">
-                           <Square size={20} fill="currentColor" />
+                         <button 
+                           onClick={resetPomodoro} 
+                           className="px-8 py-4 bg-card-inner border border-app text-red-500 rounded-2xl flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all font-bold"
+                         >
+                           <Square size={22} className="mr-2 fill-current" /> 结束
                          </button>
-                       </>
+                       </div>
                     )}
                  </div>
              </div>
@@ -1827,6 +2024,9 @@ export default function App() {
               />
               <div className="text-center mt-6 text-[11px] text-tertiary font-medium bg-card-inner/50 py-2.5 rounded-xl border border-app border-dashed">
                  提示：点击日期记录备忘事项，所有数据均保留在您本地。
+              </div>
+              <div className="text-center pt-8 pb-4 opacity-30">
+                 <p className="text-[10px] font-mono tracking-widest text-tertiary uppercase">Version 1.0.10</p>
               </div>
             </div>
          </div>
@@ -2004,6 +2204,21 @@ export default function App() {
                 完成
               </button>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-brand text-[#141414] rounded-full shadow-2xl font-bold flex items-center gap-2 border border-brand/50"
+          >
+            <span>{toast.type === 'warn' ? '⚠️' : 'ℹ️'}</span>
+            {toast.message}
           </motion.div>
         )}
       </AnimatePresence>
