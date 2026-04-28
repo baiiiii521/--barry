@@ -413,23 +413,26 @@ export default function App() {
   const [pomodoroTask, setPomodoroTask] = useState("");
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
 
-  useEffect(() => {
-    let interval;
-    if (isPomodoroActive && pomodoroTimeLeft > 0) {
-      interval = setInterval(() => {
-        setPomodoroTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (isPomodoroActive && pomodoroTimeLeft === 0) {
-      setIsPomodoroActive(false);
-      setCompletedPomodoros(prev => prev + 1);
-      if ('Notification' in window && Notification.permission === "granted") {
-         new Notification("番茄钟完成", { body: "休息一下吧！" });
-      } else {
-         alert("番茄钟完成，休息一下吧！");
-      }
-    }
-    return () => clearInterval(interval);
-  }, [isPomodoroActive, pomodoroTimeLeft]);
+  // === Reminder State ===
+  const [reminderText, setReminderText] = useState('该摸一会儿鱼了，休息一下！');
+  const [reminderMins, setReminderMins] = useState(30);
+  const [isReminderActive, setIsReminderActive] = useState(false);
+  const [reminderTimeLeft, setReminderTimeLeft] = useState(30 * 60);
+
+  // === Refs for Background Ticking ===
+  const pomodoroTimeLeftRef = useRef(pomodoroTimeLeft);
+  pomodoroTimeLeftRef.current = pomodoroTimeLeft;
+  const isPomodoroActiveRef = useRef(isPomodoroActive);
+  isPomodoroActiveRef.current = isPomodoroActive;
+  
+  const reminderTimeLeftRef = useRef(reminderTimeLeft);
+  reminderTimeLeftRef.current = reminderTimeLeft;
+  const isReminderActiveRef = useRef(isReminderActive);
+  isReminderActiveRef.current = isReminderActive;
+  const reminderMinsRef = useRef(reminderMins);
+  reminderMinsRef.current = reminderMins;
+  const reminderTextRef = useRef(reminderText);
+  reminderTextRef.current = reminderText;
 
   const togglePomodoro = () => {
     if (!isPomodoroActive && 'Notification' in window && Notification.permission === "default") {
@@ -614,18 +617,80 @@ export default function App() {
   }
   const workSecondsToday = Math.max(0, autoWorkSecs);
 
+  const workerRef = useRef<Worker | null>(null);
+  const lastGlobalTickRef = useRef<number>(Date.now());
+  const isSlackingRef = useRef(isSlacking);
+  const isOvertimeRef = useRef(isOvertime);
+  
+  isSlackingRef.current = isSlacking;
+  isOvertimeRef.current = isOvertime;
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(new Date());
-      if (isSlacking) {
-        setSlackSecondsToday(prev => prev + 1);
+    lastGlobalTickRef.current = Date.now();
+    const code = `
+      let interval;
+      self.onmessage = function(e) {
+        if (e.data === 'start') {
+          interval = setInterval(() => self.postMessage('tick'), 1000);
+        } else if (e.data === 'stop') {
+          clearInterval(interval);
+        }
+      };
+    `;
+    const blob = new Blob([code], { type: 'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+    workerRef.current = worker;
+    
+    worker.onmessage = () => {
+      const current = Date.now();
+      const deltaSecs = (current - lastGlobalTickRef.current) / 1000;
+      lastGlobalTickRef.current = current;
+      
+      setNow(new Date(current));
+      
+      if (isSlackingRef.current) {
+        setSlackSecondsToday(prev => prev + deltaSecs);
       }
-      if (isOvertime) {
-        setOvertimeSecondsToday(prev => prev + 1);
+      if (isOvertimeRef.current) {
+        setOvertimeSecondsToday(prev => prev + deltaSecs);
       }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isSlacking, isOvertime]);
+
+      // Handle Pomodoro background tick
+      if (isPomodoroActiveRef.current && pomodoroTimeLeftRef.current > 0) {
+         const nextTime = pomodoroTimeLeftRef.current - deltaSecs;
+         if (nextTime <= 0) {
+            setPomodoroTimeLeft(0);
+            setIsPomodoroActive(false);
+            setCompletedPomodoros(prev => prev + 1);
+            if ('Notification' in window && Notification.permission === "granted") {
+               new Notification("番茄钟完成", { body: "时间到，休息一下吧！" });
+            }
+         } else {
+            setPomodoroTimeLeft(nextTime);
+         }
+      }
+
+      // Handle Reminder background tick
+      if (isReminderActiveRef.current && reminderTimeLeftRef.current > 0) {
+         const nextTime = reminderTimeLeftRef.current - deltaSecs;
+         if (nextTime <= 0) {
+            setReminderTimeLeft(reminderMinsRef.current * 60);
+            if ('Notification' in window && Notification.permission === "granted") {
+               new Notification("定时提醒", { body: reminderTextRef.current });
+            }
+         } else {
+            setReminderTimeLeft(nextTime);
+         }
+      }
+    };
+    
+    worker.postMessage('start');
+    
+    return () => {
+      worker.postMessage('stop');
+      worker.terminate();
+    };
+  }, []);
 
   const earnedToday = workSecondsToday * secondRate;
   const slackLoss = slackSecondsToday * secondRate;
@@ -1437,6 +1502,49 @@ export default function App() {
                    onChange={e => setConfig({...config, retirementDate: e.target.value})}
                  />
               </div>
+           </div>
+
+           <div className="bg-card rounded-2xl p-5 md:p-8 lg:p-10 border border-app space-y-4 shadow-lg max-w-4xl mx-auto mb-4">
+               <div>
+                  <h3 className="text-sm font-bold text-primary mb-1">循环提醒功能</h3>
+                  <p className="text-xs text-secondary mb-4">后台稳定运行的定时提醒（如喝水/站立）。</p>
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                     <label className="text-xs text-secondary mb-1.5 block">提醒间隔 (分钟)</label>
+                     <input type="number" 
+                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-brand font-mono text-base focus:border-brand focus:outline-none transition-colors"
+                       value={reminderMins}
+                       onChange={e => {
+                         const v = Number(e.target.value);
+                         setReminderMins(v);
+                         if (!isReminderActive) setReminderTimeLeft(v * 60);
+                       }}
+                     />
+                  </div>
+                  <div>
+                     <label className="text-xs text-secondary mb-1.5 block">提醒内容</label>
+                     <input type="text" 
+                       className="w-full bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary font-sans text-sm focus:border-brand focus:outline-none transition-colors"
+                       value={reminderText}
+                       onChange={e => setReminderText(e.target.value)}
+                     />
+                  </div>
+               </div>
+               <button
+                 onClick={() => {
+                    if (!isReminderActive && 'Notification' in window && Notification.permission === "default") {
+                       Notification.requestPermission().catch(()=>{});
+                    }
+                    setIsReminderActive(!isReminderActive);
+                    if (!isReminderActive) {
+                       setReminderTimeLeft(reminderMins * 60);
+                    }
+                 }}
+                 className={`w-full py-3 rounded-xl font-semibold text-sm transition-all shadow-lg ${isReminderActive ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-brand text-[#141414]'}`}
+               >
+                 {isReminderActive ? `停止提醒 (剩余 ${Math.floor(reminderTimeLeft / 60)} 分钟)` : '开启提醒'}
+               </button>
            </div>
 
            <div className="bg-card rounded-2xl p-5 md:p-8 lg:p-10 border border-app space-y-5 shadow-lg max-w-4xl mx-auto mb-4">
