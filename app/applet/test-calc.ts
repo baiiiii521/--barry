@@ -38,7 +38,32 @@ function getWorkDaysInMonth(year, month, restDays, upToDate) {
   return workdays;
 }
 
-const currentMonthWorkDays = getWorkDaysInMonth(2026, 4, 2);
-const pastWorkDaysThisMonth = getWorkDaysInMonth(2026, 4, 2, 1);
-const earnedThisMonth = Math.max(0, pastWorkDaysThisMonth * (25000 / currentMonthWorkDays));
-console.log({ currentMonthWorkDays, pastWorkDaysThisMonth, earnedThisMonth });
+const testLocalTime = new Date('2026-05-02T02:30:00+08:00');
+const currentMonth = testLocalTime.getMonth();
+const currentYear = testLocalTime.getFullYear();
+let maxLoopDays = Math.max(0, testLocalTime.getDate() - 1);
+
+let pastWorkDaysThisMonth = 0;
+for (let i = 1; i <= maxLoopDays; i++) {
+  const d = new Date(currentYear, currentMonth, i);
+  const day = d.getDay();
+  const isStandardWeekend = 2 === 2 ? (day === 0 || day === 6) : (day === 0);
+  const isCustomHol = isDateCustomHoliday(d);
+  const isCustomWork = isDateCustomWorkday(d);
+  if (isCustomHol) {
+    // no
+  } else if (isCustomWork) {
+    pastWorkDaysThisMonth++;
+  } else if (!isStandardWeekend) {
+    pastWorkDaysThisMonth++;
+  }
+}
+
+const earnedToday = 0;
+const safePastWorkDaysThisMonth = testLocalTime.getDate() <= 1 ? 0 : pastWorkDaysThisMonth;
+console.log({ 
+  maxLoopDays, 
+  pastWorkDaysThisMonth, 
+  safePastWorkDaysThisMonth,
+  earnedThisMonthTotal: safePastWorkDaysThisMonth * (25000 / 19) + earnedToday
+});

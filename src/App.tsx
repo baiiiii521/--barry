@@ -5,6 +5,7 @@ import Holidays from 'date-holidays';
 import html2canvas from 'html2canvas';
 
 import { isDateCustomHoliday, isDateCustomWorkday, getCustomHolidayName } from './holidays';
+import { VisaTab } from './VisaTab';
 
 const playAlertSound = (type: string) => {
   if (!type || type === 'none') return;
@@ -249,19 +250,23 @@ const noiseNodes: Record<string, { audio: HTMLAudioElement, interval?: any }> = 
 const playNoise = (type: string) => {
    if (!noiseNodes[type]) {
       const urls: Record<string, string> = {
-         rain: 'https://assets.mixkit.co/active_storage/sfx/2443/2443-prev.m4a',
-         fire: 'https://assets.mixkit.co/active_storage/sfx/3037/3037-prev.m4a',
-         train: 'https://assets.mixkit.co/active_storage/sfx/2387/2387-prev.m4a',
-         ocean: 'https://assets.mixkit.co/active_storage/sfx/1196/1196-prev.m4a',
-         birds: 'https://assets.mixkit.co/active_storage/sfx/1210/1210-prev.m4a',
-         wind: 'https://assets.mixkit.co/active_storage/sfx/1158/1158-prev.m4a',
-         stream: 'https://assets.mixkit.co/active_storage/sfx/2438/2438-prev.m4a',
-         keyboard: 'https://assets.mixkit.co/active_storage/sfx/611/611-prev.m4a',
-         clock: 'https://assets.mixkit.co/active_storage/sfx/1066/1066-prev.m4a'
+         rain: 'https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg',
+         fire: 'https://actions.google.com/sounds/v1/weather/crackling_fireplace.ogg',
+         train: 'https://actions.google.com/sounds/v1/transportation/train_pass_by.ogg',
+         ocean: 'https://actions.google.com/sounds/v1/water/ocean_waves_crashing.ogg',
+         birds: 'https://actions.google.com/sounds/v1/animals/bird_forest_stream.ogg',
+         wind: 'https://actions.google.com/sounds/v1/weather/wind_howl1.ogg',
+         stream: 'https://actions.google.com/sounds/v1/water/country_stream.ogg',
+         keyboard: 'https://actions.google.com/sounds/v1/foley/typing_on_keyboard.ogg',
+         clock: 'https://actions.google.com/sounds/v1/household/ticking_clock.ogg'
       };
       if (urls[type]) {
          const a = new Audio(urls[type]);
          a.loop = true;
+         a.addEventListener('ended', () => {
+            a.currentTime = 0;
+            a.play().catch(()=>{});
+         });
          a.volume = 0;
          noiseNodes[type] = { audio: a };
       }
@@ -275,9 +280,9 @@ const playNoise = (type: string) => {
       });
       let vol = node.audio.volume;
       node.interval = setInterval(() => {
-         vol = Math.min(0.4, vol + 0.02);
+         vol = Math.min(1.0, vol + 0.1);
          node.audio.volume = vol;
-         if (vol >= 0.4) {
+         if (vol >= 1.0) {
             clearInterval(node.interval);
             node.interval = null;
          }
@@ -951,16 +956,21 @@ export default function App() {
   useEffect(() => localStorage.setItem('pomodoroContainer', pomodoroContainer), [pomodoroContainer]);
   useEffect(() => localStorage.setItem('activeBgms', JSON.stringify(activeBgms)), [activeBgms]);
 
+  // Restore BGM playback on the first user click anywhere in the app to bypass autoplay restrictions
   useEffect(() => {
-    const allSupportedBgms = ['rain', 'fire', 'train', 'ocean', 'birds', 'wind', 'stream', 'keyboard', 'clock'];
-    allSupportedBgms.forEach(bgm => {
-       if (activeBgms.includes(bgm)) {
-          playNoise(bgm);
-       } else {
-          stopNoise(bgm);
-       }
-    });
+      const handleFirstInteraction = () => {
+         const allSupportedBgms = ['rain', 'fire', 'train', 'ocean', 'birds', 'wind', 'stream', 'keyboard', 'clock'];
+         allSupportedBgms.forEach(bgm => {
+            if (activeBgms.includes(bgm)) {
+               playNoise(bgm);
+            }
+         });
+         document.removeEventListener('click', handleFirstInteraction);
+      };
+      document.addEventListener('click', handleFirstInteraction);
+      return () => document.removeEventListener('click', handleFirstInteraction);
   }, [activeBgms]);
+
   const [pomodoroLength, setPomodoroLength] = useState(() => runtimeState?.pomodoroLength ?? 25); // in minutes
   const [pomodoroTimeLeft, setPomodoroTimeLeft] = useState(() => {
     if (runtimeState?.pomodoroTimeLeft !== undefined) {
@@ -1085,9 +1095,7 @@ export default function App() {
     return getWorkDaysInMonth(localTime.getFullYear(), localTime.getMonth(), config.holidayRegion, config.restDays);
   }, [localTime.getFullYear(), localTime.getMonth(), config.holidayRegion, config.restDays]);
 
-  const hourlyRate = config.monthlySalary / (currentMonthWorkDays * config.hoursPerDay);
-  const minuteRate = hourlyRate / 60;
-  const secondRate = minuteRate / 60;
+  /* Moved hourlyRate below */
 
   const [isSlacking, setIsSlacking] = useState(() => isSameDay ? (runtimeState?.isSlacking ?? false) : false);
   const [toast, setToast] = useState<{message: string, type: 'info'|'warn'}|null>(null);
@@ -1098,6 +1106,19 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  const [newReimbDesc, setNewReimbDesc] = useState('');
+  const [newReimbAmount, setNewReimbAmount] = useState('');
+  const [newReimbCurrency, setNewReimbCurrency] = useState('CNY');
+  const [exportRates, setExportRates] = useState(() => {
+     try {
+         const r = localStorage.getItem('exportRates');
+         if (r) return JSON.parse(r);
+     } catch(e) {}
+     return { USD_TO_CNY: 7.2, THB_TO_CNY: 0.2, VND_TO_CNY: 0.0003 };
+  });
+  useEffect(() => localStorage.setItem('exportRates', JSON.stringify(exportRates)), [exportRates]);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const handleMemoModalClose = useCallback(() => {
     setSelectedMemoDate(null);
@@ -1241,11 +1262,25 @@ export default function App() {
     return (h || 0) * 3600 + (m || 0) * 60;
   };
 
-  const nowSecs = localTime.getHours() * 3600 + localTime.getMinutes() * 60 + localTime.getSeconds();
+    const nowSecs = localTime.getHours() * 3600 + localTime.getMinutes() * 60 + localTime.getSeconds();
+  /* Moved again */
   const startSecs = getSecondsFromMidnight(config.startTime);
   const endSecs = getSecondsFromMidnight(config.endTime);
   const lunchStartSecs = getSecondsFromMidnight(config.lunchStartTime);
   const lunchEndSecs = getSecondsFromMidnight(config.lunchEndTime);
+
+  const derivedHoursPerDay = useMemo(() => {
+    let totalSecs = endSecs > startSecs ? endSecs - startSecs : (endSecs + 24 * 3600) - startSecs;
+    if (config.hasLunchBreak) {
+      const lunchSecs = Math.max(0, lunchEndSecs > lunchStartSecs ? lunchEndSecs - lunchStartSecs : (lunchEndSecs + 24 * 3600) - lunchStartSecs);
+      totalSecs = Math.max(0, totalSecs - lunchSecs);
+    }
+    return totalSecs / 3600 || 8; // fallback to 8 if 0
+  }, [startSecs, endSecs, lunchStartSecs, lunchEndSecs, config.hasLunchBreak]);
+
+  const hourlyRate = config.monthlySalary / ((currentMonthWorkDays || 22) * (derivedHoursPerDay || 8));
+  const minuteRate = hourlyRate / 60;
+  const secondRate = minuteRate / 60;
 
   const isPublicHoliday = useMemo(() => {
     return isDateCustomHoliday(localTime, config.holidayRegion);
@@ -1462,8 +1497,12 @@ export default function App() {
   const safePastWorkDaysThisMonth = localTime.getDate() <= 1 ? 0 : pastWorkDaysThisMonth;
   const safeCurrentMonthWorkDays = Math.max(1, currentMonthWorkDays || 22);
 
-  const earnedThisMonth = Math.max(0, safePastWorkDaysThisMonth * (config.monthlySalary / safeCurrentMonthWorkDays) + earnedToday - (unpaidLeavesThisMonth * dailyDeduction));
-  const hoursThisMonth = Math.max(0, safePastWorkDaysThisMonth * config.hoursPerDay + (workSecondsToday / 3600));
+  let earnedThisMonth = 0;
+  let hoursThisMonth = 0;
+  if (safePastWorkDaysThisMonth > 0 || Math.max(0, autoWorkSecs) > 0) {
+    earnedThisMonth = Math.max(0, safePastWorkDaysThisMonth * (config.monthlySalary / safeCurrentMonthWorkDays) + earnedToday - (unpaidLeavesThisMonth * dailyDeduction));
+    hoursThisMonth = Math.max(0, safePastWorkDaysThisMonth * derivedHoursPerDay + (workSecondsToday / 3600));
+  }
 
   console.log("DEBUG", {
     localTime: localTime.toString(),
@@ -1500,8 +1539,8 @@ export default function App() {
   }
   const earnedThisWeek = Math.max(0, pastWorkDaysThisWeek * (config.monthlySalary / safeCurrentMonthWorkDays) + earnedToday);
   
-  const effectiveWorkThisWeek = Math.max(0, pastWorkDaysThisWeek * config.hoursPerDay * 0.85 + (workSecondsToday - slackSecondsToday) / 3600);
-  const slackThisWeek = Math.max(0, pastWorkDaysThisWeek * config.hoursPerDay * 0.15 + slackSecondsToday / 3600);
+  const effectiveWorkThisWeek = Math.max(0, pastWorkDaysThisWeek * derivedHoursPerDay * 0.85 + (workSecondsToday - slackSecondsToday) / 3600);
+  const slackThisWeek = Math.max(0, pastWorkDaysThisWeek * derivedHoursPerDay * 0.15 + slackSecondsToday / 3600);
   
   const bestDayEarned = Math.max(earnedToday, (config.monthlySalary / (currentMonthWorkDays || 22)));
   const weekDaysStr = ['周日','周一','周二','周三','周四','周五','周六'];
@@ -1928,14 +1967,25 @@ export default function App() {
              </div>
              
              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 snaps-x">
-                <CountdownCard 
-                   title="下班倒计时"
-                   time={`${pad0(Math.floor(offWorkSecs / 3600))}:${pad0(Math.floor((offWorkSecs % 3600)/60))}:${pad0(offWorkSecs % 60)}`}
-                   desc={`${config.endTime}下班`}
-                   progress={100 - (offWorkSecs / (config.hoursPerDay * 3600)) * 100}
-                   icon={<Briefcase size={16} />}
-                   color="green"
-                />
+                {!isRestDay ? (
+                   <CountdownCard 
+                      title="下班倒计时"
+                      time={`${pad0(Math.floor(offWorkSecs / 3600))}:${pad0(Math.floor((offWorkSecs % 3600)/60))}:${pad0(offWorkSecs % 60)}`}
+                      desc={`${config.endTime}下班`}
+                      progress={100 - (offWorkSecs / (derivedHoursPerDay * 3600)) * 100}
+                      icon={<Briefcase size={16} />}
+                      color="green"
+                   />
+                ) : (
+                   <CountdownCard 
+                      title="今日状态"
+                      time="休息中"
+                      desc="尽情享受假期"
+                      progress={100}
+                      icon={<Briefcase size={16} />}
+                      color="green"
+                   />
+                )}
                 <CountdownCard 
                    title={isRestDay ? "距离下个休息日" : "距离休息日"}
                    time={`${daysToNextRestDay} 天`}
@@ -2157,36 +2207,154 @@ export default function App() {
                 </div>
               </div>
            </div>
+
+           {/* REIMBURSEMENTS SECTION */}
            <div className="bg-card rounded-2xl p-5 border border-app shadow-xl space-y-4 relative overflow-hidden mt-4">
-               <div>
-                  <h3 className="text-sm font-semibold text-primary mb-3">📊 时间价值报告 (周报)</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                     <div className="bg-card-inner p-3 rounded-xl border border-brand/20 flex flex-col justify-center">
-                        <div className="text-[10px] text-tertiary mb-1">本周摸鱼收益</div>
-                        <div className="text-sm font-mono text-brand font-bold">{sym} {hide(formatMoney((slackThisWeek * hourlyRate) / ex))}</div>
-                     </div>
-                     <div className="bg-card-inner p-3 rounded-xl border border-app flex flex-col justify-center">
-                        <div className="text-[10px] text-tertiary mb-1">本周最赚钱一天</div>
-                        <div className="text-sm font-mono text-primary tracking-tight">{bestDayStr} ({sym}{hide(formatMoney(bestDayEarned / ex))})</div>
-                     </div>
-                  </div>
-                  <div className="mt-3 bg-card-inner p-3 rounded-xl border border-app shadow-sm">
-                     <div className="flex justify-between items-center mb-1 text-[10px]">
-                        <span className="text-tertiary">时间分配</span>
-                        <span className="text-secondary font-mono">¥ {hide(formatMoney(hourlyRate / ex))}/h</span>
-                     </div>
-                     <div className="w-full h-3 flex rounded-full overflow-hidden border border-app">
-                        <div className="bg-brand transition-all" style={{ width: `${(effectiveWorkThisWeek / (effectiveWorkThisWeek + slackThisWeek || 1)) * 100}%` }}></div>
-                        <div className="bg-app-strong transition-all" style={{ width: `${(slackThisWeek / (effectiveWorkThisWeek + slackThisWeek || 1)) * 100}%` }}></div>
-                     </div>
-                     <div className="flex justify-between text-[10px] mt-1">
-                        <span className="text-brand">有效这周 {effectiveWorkThisWeek.toFixed(1)}h</span>
-                        <span className="text-tertiary">摸鱼 {slackThisWeek.toFixed(1)}h</span>
-                     </div>
-                  </div>
+               <div className="flex justify-between items-center mb-1">
+                  <h3 className="text-sm font-semibold text-primary">🧾 报销记录 (本月)</h3>
+                  <button onClick={() => setShowExportModal(true)} className="text-xs text-brand hover:underline">导出/汇总</button>
                </div>
-             </div>
-             
+               
+               {/* Add New */}
+               <div className="bg-card-inner p-3 rounded-xl border border-app space-y-3">
+                  <div className="text-[10px] text-tertiary">记录今日报销</div>
+                  <div className="flex gap-2">
+                     <input 
+                        type="text"
+                        placeholder="项目说明..."
+                        value={newReimbDesc}
+                        onChange={e => setNewReimbDesc(e.target.value)}
+                        className="flex-1 bg-card border border-app rounded-lg px-2 py-1.5 text-xs text-primary focus:outline-none focus:border-brand"
+                     />
+                     <div className="flex w-[120px]">
+                        <input 
+                           type="number"
+                           placeholder="金额"
+                           value={newReimbAmount}
+                           onChange={e => setNewReimbAmount(e.target.value)}
+                           className="w-full bg-card border border-app border-r-0 rounded-l-lg px-2 py-1.5 text-xs text-primary focus:outline-none focus:border-brand"
+                        />
+                        <select 
+                           value={newReimbCurrency}
+                           onChange={e => setNewReimbCurrency(e.target.value)}
+                           className="bg-card border border-app border-l border-app-strong rounded-r-lg px-1 py-1.5 text-xs text-primary outline-none"
+                        >
+                           <option value="CNY">¥</option>
+                           <option value="USD">$</option>
+                           <option value="THB">฿</option>
+                           <option value="VND">₫</option>
+                        </select>
+                     </div>
+                  </div>
+                  <button 
+                     onClick={() => {
+                        if (!newReimbDesc || !newReimbAmount) return setToast({ message: '请输入说明和金额', type: 'warn' });
+                        const newItem = {
+                           id: Date.now().toString(),
+                           date: localTime.toISOString().split('T')[0],
+                           desc: newReimbDesc,
+                           amount: Number(newReimbAmount),
+                           currency: newReimbCurrency
+                        };
+                        setConfig({
+                           ...config,
+                           reimbursements: [...(config.reimbursements || []), newItem]
+                        });
+                        setNewReimbDesc('');
+                        setNewReimbAmount('');
+                        setToast({ message: '已添加报销记录', type: 'info' });
+                     }}
+                     className="w-full py-2 bg-brand/10 text-brand border border-brand/20 text-xs font-bold rounded-lg hover:bg-brand/20 transition-colors"
+                  >
+                     + 记一笔
+                  </button>
+               </div>
+
+               {/* List latest 3 */}
+               <div className="space-y-2 max-h-[200px] overflow-y-auto no-scrollbar">
+                  {(config.reimbursements || [])
+                     .filter((r: any) => r.date.startsWith(`${localTime.getFullYear()}-${(localTime.getMonth() + 1).toString().padStart(2, '0')}`))
+                     .slice().reverse().map((r: any) => (
+                     <div key={r.id} className="flex justify-between items-center text-xs p-2 bg-card-inner rounded-lg border border-app">
+                        <div className="flex flex-col">
+                           <span className="text-primary truncate max-w-[150px]">{r.desc}</span>
+                           <span className="text-[9px] text-tertiary">{r.date}</span>
+                        </div>
+                        <div className="font-mono text-brand font-bold flex items-center gap-2">
+                           {r.currency === 'CNY' ? '¥' : r.currency === 'USD' ? '$' : r.currency === 'THB' ? '฿' : '₫'} {r.amount}
+                           <button 
+                              onClick={() => setConfig({...config, reimbursements: config.reimbursements.filter((x: any) => x.id !== r.id)})}
+                              className="w-5 h-5 flex items-center justify-center rounded-md bg-red-500/10 text-red-500/50 hover:text-red-500 hover:bg-red-500/20 font-sans"
+                           >
+                              ×
+                           </button>
+                        </div>
+                     </div>
+                  ))}
+               </div>
+           </div>
+
+           {/* Export Modal */}
+           {showExportModal && (
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                 <div className="bg-card border border-app rounded-2xl p-5 shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto">
+                    <h3 className="text-lg font-bold text-primary mb-4">本月报销汇总计算</h3>
+                    <div className="space-y-3 mb-6">
+                       <label className="text-xs text-secondary font-medium">汇率设定 (转换为人民币)</label>
+                       <div className="flex items-center justify-between text-xs bg-card-inner p-2 rounded-lg">
+                          <span className="text-tertiary">1 USD =</span>
+                          <input type="number" step="0.01" value={exportRates.USD_TO_CNY} onChange={e => setExportRates({...exportRates, USD_TO_CNY: Number(e.target.value)})} className="bg-card border border-app rounded w-20 px-2 py-1 outline-none text-primary" />
+                       </div>
+                       <div className="flex items-center justify-between text-xs bg-card-inner p-2 rounded-lg">
+                          <span className="text-tertiary">1 THB =</span>
+                          <input type="number" step="0.001" value={exportRates.THB_TO_CNY} onChange={e => setExportRates({...exportRates, THB_TO_CNY: Number(e.target.value)})} className="bg-card border border-app rounded w-20 px-2 py-1 outline-none text-primary" />
+                       </div>
+                       <div className="flex items-center justify-between text-xs bg-card-inner p-2 rounded-lg">
+                          <span className="text-tertiary">1 VND =</span>
+                          <input type="number" step="0.0001" value={exportRates.VND_TO_CNY} onChange={e => setExportRates({...exportRates, VND_TO_CNY: Number(e.target.value)})} className="bg-card border border-app rounded w-20 px-2 py-1 outline-none text-primary" />
+                       </div>
+                    </div>
+
+                    <div className="border-t border-app pt-4 mb-6">
+                       <div className="text-xs text-secondary font-medium mb-2">汇总结果</div>
+                       {(() => {
+                          const thisMonth = (config.reimbursements || []).filter((r: any) => r.date.startsWith(`${localTime.getFullYear()}-${(localTime.getMonth() + 1).toString().padStart(2, '0')}`));
+                          let totalCNY = 0;
+                          thisMonth.forEach((r: any) => {
+                             if (r.currency === 'CNY') totalCNY += r.amount;
+                             if (r.currency === 'USD') totalCNY += r.amount * (exportRates.USD_TO_CNY || 7.2);
+                             if (r.currency === 'THB') totalCNY += r.amount * (exportRates.THB_TO_CNY || 0.2);
+                             if (r.currency === 'VND') totalCNY += r.amount * (exportRates.VND_TO_CNY || 0.0003);
+                          });
+                          const totalUSD = totalCNY / (exportRates.USD_TO_CNY || 7.2);
+                          return (
+                             <div className="space-y-2">
+                                <div className="bg-brand/10 text-brand p-3 rounded-xl border border-brand/20 flex flex-col">
+                                   <span className="text-[10px] opacity-80 mb-1">总计 (CNY)</span>
+                                   <span className="text-xl font-bold font-mono">¥ {totalCNY.toFixed(2)}</span>
+                                </div>
+                                <div className="bg-card-inner text-primary p-3 rounded-xl border border-app flex flex-col">
+                                   <span className="text-[10px] text-tertiary mb-1">等值美元 (USD)</span>
+                                   <span className="text-md font-bold font-mono">$ {totalUSD.toFixed(2)}</span>
+                                </div>
+                                <div className="text-[10px] text-tertiary max-h-32 overflow-y-auto mt-2">
+                                   {thisMonth.map((r: any, i: number) => (
+                                      <div key={i} className="flex justify-between border-b border-app/50 py-1.5 last:border-0">
+                                         <span className="truncate pr-2">{r.date} {r.desc}</span>
+                                         <span className="font-mono whitespace-nowrap">{['CNY','USD'].includes(r.currency)?(r.currency==='CNY'?'¥':'$'):''}{r.amount.toFixed(2)} {r.currency}</span>
+                                      </div>
+                                   ))}
+                                </div>
+                             </div>
+                          );
+                       })()}
+                    </div>
+
+                    <button onClick={() => setShowExportModal(false)} className="w-full py-2.5 rounded-xl border border-app-strong text-xs font-bold text-secondary hover:bg-card-inner hover:text-primary transition-colors">关闭</button>
+                 </div>
+              </div>
+           )}
+
           </div>
       )}
 
@@ -2243,12 +2411,12 @@ export default function App() {
                  </div>
               </div>
               <div>
-                 <label className="text-xs text-secondary mb-1.5 block">每日工作时长 (小时)</label>
-                 <input type="number" step="0.5"
-                   className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary font-mono text-base focus:border-brand focus:outline-none transition-colors"
-                   value={config.hoursPerDay === 0 ? '' : config.hoursPerDay}
-                   onChange={e => setConfig({...config, hoursPerDay: e.target.value === '' ? 0 : Number(e.target.value)})}
-                 />
+                 <label className="text-xs text-secondary mb-1.5 block">每日工作时长 (小时) <span className="text-[10px] opacity-60 ml-1">自动计算</span></label>
+                 <div
+                   className="w-full flex items-center bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] text-primary font-mono text-base opacity-70"
+                 >
+                   {derivedHoursPerDay.toFixed(1)}
+                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div>
@@ -2609,7 +2777,7 @@ export default function App() {
               <p>Architect & Author</p>
               <p className="font-semibold text-primary">Barry</p>
               <a href="mailto:barry.bai@hotwavehk.com" className="hover:text-brand transition-colors">barry.bai@hotwavehk.com</a>
-              <p className="mt-2 text-[10px] tracking-widest uppercase">Version 1.0.21</p>
+              <p className="mt-2 text-[10px] tracking-widest uppercase">Version 1.0.23</p>
            </div>
         </div>
       )}
@@ -2728,8 +2896,10 @@ export default function App() {
                             onClick={() => {
                                if (isActiveBg) {
                                   setActiveBgms(activeBgms.filter(x => x !== bgm.id));
+                                  stopNoise(bgm.id);
                                } else {
                                   setActiveBgms([...activeBgms, bgm.id]);
+                                  playNoise(bgm.id);
                                }
                             }}
                             className={`flex flex-col items-center justify-center py-3 rounded-xl border ${isActiveBg ? 'bg-brand/10 border-brand/50 text-brand shadow-[0_0_10px_rgba(0,255,65,0.2)]' : 'bg-card border-app text-secondary hover:text-primary'} transition-all`}
@@ -2833,7 +3003,7 @@ export default function App() {
                
                if (isPastMonth) {
                   calEarned = config.monthlySalary;
-                  calHours = calWorkDays * config.hoursPerDay;
+                  calHours = calWorkDays * derivedHoursPerDay;
                   calSlack = (slackLoss / Math.max(1, localTime.getDate())) * calWorkDays;
                   calOvertime = (overtimeLoss / Math.max(1, localTime.getDate())) * calWorkDays;
                } else if (isFutureMonth) {
@@ -2890,259 +3060,14 @@ export default function App() {
                  提示：点击日期记录备忘事项，所有数据均保留在您本地。
               </div>
               <div className="text-center pt-8 pb-4 opacity-30">
-                 <p className="text-[10px] font-mono tracking-widest text-tertiary uppercase">Version 1.0.21</p>
+                 <p className="text-[10px] font-mono tracking-widest text-tertiary uppercase">Version 1.0.23</p>
               </div>
             </div>
          </div>
         );
       })()}
 
-      {activeTab === 'visa' && (
-        <div className="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 py-8 space-y-6 pb-24 absolute inset-0 top-0 bg-card-inner z-40 md:rounded-3xl max-w-4xl mx-auto w-full">
-           <div className="flex items-center justify-between mt-2 mb-6">
-              <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
-                 <Plane size={24} className="text-brand" /> 跨国签证管家
-              </h2>
-              
-              <button 
-                onClick={() => setShowFinishedVisa(!showFinishedVisa)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${
-                  showFinishedVisa 
-                  ? 'bg-brand/10 border-brand/20 text-brand shadow-[0_0_10px_rgba(34,197,94,0.1)]' 
-                  : 'bg-card border-app text-tertiary'
-                }`}
-              >
-                {showFinishedVisa ? '显示全部行程' : '仅看进行中'}
-                <div className={`w-1.5 h-1.5 rounded-full ${showFinishedVisa ? 'bg-brand animate-pulse' : 'bg-tertiary'}`} />
-              </button>
-           </div>
-           
-           <div className="bg-card w-full border border-app rounded-[24px] p-5 shadow-sm relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full" />
-             <form className="relative z-10 flex flex-col gap-4" onSubmit={(e) => {
-               e.preventDefault();
-               const fd = new FormData(e.currentTarget);
-               const entryDate = fd.get('entryDate') as string;
-               const exitDate = fd.get('exitDate') as string;
-               const country = fd.get('country') as string || 'US';
-               const validityDays = parseInt(fd.get('validityDays') as string) || 30;
-               const entryAirport = fd.get('entryAirport') as string;
-               const exitAirport = fd.get('exitAirport') as string;
-               if (!entryDate) return alert('请输入入境日期');
-               setVisaEntries([{
-                 id: Date.now().toString(),
-                 entryDate,
-                 exitDate,
-                 country,
-                 validityDays,
-                 entryAirport,
-                 exitAirport
-               }, ...visaEntries]);
-               e.currentTarget.reset();
-             }}>
-               <div className="grid grid-cols-2 gap-3">
-                 <div>
-                   <label className="text-xs text-secondary mb-1.5 block">入境国家/地区</label>
-                   <input name="country" type="text" placeholder="例如：泰国" required className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
-                 </div>
-                 <div>
-                   <label className="text-xs text-secondary mb-1.5 block">签证有效期 (天)</label>
-                   <input name="validityDays" type="number" defaultValue="30" required className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
-                 </div>
-               </div>
-               <div className="grid grid-cols-2 gap-3 border-t border-app pt-3">
-                 <div>
-                   <label className="text-xs text-secondary mb-1.5 block flex items-center gap-1"><span className="text-[10px]">🛬</span> 入境日期</label>
-                   <input name="entryDate" type="date" required className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
-                 </div>
-                 <div>
-                   <label className="text-xs text-secondary mb-1.5 block">入境机场/口岸</label>
-                   <input name="entryAirport" type="text" placeholder="如：BKK" className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
-                 </div>
-               </div>
-               <div className="grid grid-cols-2 gap-3 border-t border-app pt-3">
-                 <div>
-                   <label className="text-xs text-secondary mb-1.5 block flex items-center gap-1"><span className="text-[10px]">🛫</span> 出境日期 (选填)</label>
-                   <input name="exitDate" type="date" className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
-                 </div>
-                 <div>
-                   <label className="text-xs text-secondary mb-1.5 block">出境机场/口岸 (选填)</label>
-                   <input name="exitAirport" type="text" placeholder="如：NRT" className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
-                 </div>
-               </div>
-               <button type="submit" className="w-full py-3 h-[48px] bg-brand text-app font-bold rounded-xl mt-2 hover:brightness-110 transition-all shadow-md">
-                 登记新行程 (出境可选填)
-               </button>
-               <p className="text-[10px] text-tertiary text-center mt-1">如果中途离境再次入境，可以直接添加一条新行程。</p>
-             </form>
-           </div>
-
-           <div className="space-y-4">
-             {visaEntries
-               .filter(entry => showFinishedVisa || !entry.exitDate)
-               .map(entry => {
-               const entryTime = new Date(entry.entryDate).getTime();
-               const exitTime = entry.exitDate ? new Date(entry.exitDate).getTime() : Date.now();
-               const expireTime = entryTime + entry.validityDays * 24 * 60 * 60 * 1000;
-               
-               const totalStayed = Math.floor((exitTime - entryTime) / (1000 * 60 * 60 * 24)) + 1;
-               const remainingDays = Math.ceil((expireTime - Date.now()) / (1000 * 60 * 60 * 24));
-               const isOverdue = remainingDays < 0 && !entry.exitDate;
-               
-               let tag = null;
-               if (entry.exitDate) {
-                 tag = <span className="bg-app px-2 py-0.5 rounded text-secondary border border-app-strong text-[10px]">已结束</span>;
-               } else if (isOverdue) {
-                 tag = <span className="bg-red-500/10 px-2 py-0.5 rounded text-red-500 border border-red-500/30 text-[10px] font-bold animate-pulse">已逾期 {Math.abs(remainingDays)} 天！</span>;
-               } else if (remainingDays <= 3) {
-                 tag = <span className="bg-orange-500/10 px-2 py-0.5 rounded text-orange-500 border border-orange-500/30 text-[10px] font-bold">⚠️ 剩 {remainingDays} 天续签</span>;
-               } else {
-                 tag = <span className="bg-brand/10 px-2 py-0.5 rounded text-brand border border-brand/30 text-[10px] font-bold italic">进行中</span>;
-               }
-
-               return (
-                 <div key={entry.id} className={`bg-card w-full border border-app border-l-[4px] rounded-2xl p-4 shadow-sm relative group overflow-hidden transition-all ${entry.exitDate ? 'border-l-tertiary/30' : 'border-l-brand'}`}>
-                   <div className="flex justify-between items-start mb-3">
-                     <div className="flex flex-col">
-                       <span className="text-sm font-bold text-primary flex items-center gap-1.5">
-                         {entry.country} 
-                         {tag}
-                       </span>
-                       <div className="text-[10px] text-tertiary mt-2 flex flex-col gap-1.5 font-medium">
-                         <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 flex items-center justify-center bg-brand/10 text-brand rounded-full text-[7px]">入</span>
-                            <span className="opacity-80">{entry.entryDate} {entry.entryAirport && `· ${entry.entryAirport}`}</span>
-                         </div>
-                         <div className="flex items-center gap-2">
-                            <span className={`w-3 h-3 flex items-center justify-center rounded-full text-[7px] ${entry.exitDate ? 'bg-tertiary/10 text-tertiary' : 'bg-blue-500/10 text-blue-500 animate-pulse'}`}>出</span>
-                            <span className={entry.exitDate ? "opacity-80" : "text-blue-500"}>
-                              {entry.exitDate ? `${entry.exitDate} ${entry.exitAirport ? `· ${entry.exitAirport}` : ''}` : '尚未出境'}
-                            </span>
-                         </div>
-                       </div>
-                     </div>
-                     <button onClick={() => setVisaEntries(visaEntries.filter(x => x.id !== entry.id))} className="text-tertiary hover:text-red-500 transition-colors p-1.5 bg-card-inner rounded-lg border border-app opacity-40 group-hover:opacity-100"><Trash2 size={14}/></button>
-                   </div>
-
-                   <div className="grid grid-cols-2 gap-3 mt-4">
-                     <div className="bg-card-inner/50 rounded-2xl p-3 border border-app flex flex-col justify-center relative">
-                       <span className="text-[9px] text-tertiary mb-1 uppercase tracking-wider font-bold">{entry.exitDate ? '历时' : '已停留'}</span>
-                       <div className="flex items-baseline gap-1">
-                         <span className="text-xl font-mono font-bold text-primary">{totalStayed}</span>
-                         <span className="text-[10px] text-tertiary">Days</span>
-                       </div>
-                     </div>
-                     <div className="bg-card-inner/50 rounded-2xl p-3 border border-app flex flex-col justify-center relative">
-                       <span className="text-[9px] text-tertiary mb-1 uppercase tracking-wider font-bold">{entry.exitDate ? '期限' : '剩余'}</span>
-                       <div className="flex items-baseline gap-1">
-                         <span className={`text-xl font-mono font-bold ${!entry.exitDate && remainingDays <= 7 ? 'text-orange-500' : 'text-brand'}`}>
-                           {entry.exitDate ? entry.validityDays : Math.max(0, remainingDays)}
-                         </span>
-                         <span className="text-[10px] text-tertiary">Days</span>
-                       </div>
-                     </div>
-                   </div>
-
-                   {!entry.exitDate && (
-                     <div className="mt-4 pt-4 border-t border-app relative z-10">
-                       <label className="text-[10px] font-bold text-secondary mb-2 block uppercase tracking-tighter">快速记录出境</label>
-                       <div className="flex gap-2">
-                         <input type="date" 
-                           className="flex-1 appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[40px] block box-border text-primary focus:border-brand focus:outline-none text-xs transition-shadow focus:shadow-[0_0_10px_rgba(34,197,94,0.1)]" 
-                           onChange={(e) => {
-                             if (e.target.value) {
-                               const updated = visaEntries.map(x => x.id === entry.id ? { ...x, exitDate: e.target.value } : x);
-                               setVisaEntries(updated);
-                             }
-                           }}
-                         />
-                         <input type="text"
-                           placeholder="口岸"
-                           className="w-[80px] appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[40px] block box-border text-primary focus:border-brand focus:outline-none text-xs transition-shadow focus:shadow-[0_0_10px_rgba(34,197,94,0.1)]"
-                           value={entry.exitAirport}
-                           onChange={(e) => {
-                               const updated = visaEntries.map(x => x.id === entry.id ? { ...x, exitAirport: e.target.value } : x);
-                               setVisaEntries(updated);
-                           }}
-                         />
-                       </div>
-                     </div>
-                   )}
-                 </div>
-               );
-             })}
-             
-             {visaEntries.filter(entry => showFinishedVisa || !entry.exitDate).length === 0 && (
-               <div className="py-16 bg-card border border-app border-dashed rounded-3xl text-center text-secondary text-sm flex flex-col items-center gap-3">
-                 <div className="w-16 h-16 rounded-full bg-card-inner border border-app flex items-center justify-center opacity-30 mt-2">
-                   <Plane size={32} />
-                 </div>
-                 <div className="flex flex-col gap-1">
-                   <span className="font-bold opacity-80">暂无行程记录</span>
-                   <span className="text-[10px] opacity-40 uppercase tracking-widest tracking-tighter">Nothing to display</span>
-                 </div>
-                 {(!showFinishedVisa && visaEntries.length > 0) && (
-                    <button 
-                      onClick={() => setShowFinishedVisa(true)}
-                      className="mt-2 text-brand text-xs font-bold underline underline-offset-4"
-                    >
-                      查看已结束的行程 ({visaEntries.length})
-                    </button>
-                 )}
-               </div>
-             )}
-             
-             {visaEntries.length > 0 && (
-               <div className="mt-8 pt-8 border-t border-app">
-                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xs font-bold text-secondary uppercase tracking-widest">出境行程统计</h3>
-                    <span className="text-[10px] font-mono text-tertiary">TOTAL STATS</span>
-                 </div>
-                 <div className="bg-card-inner rounded-[24px] p-5 border border-brand/20 shadow-inner flex flex-col group hover:border-brand/40 transition-colors">
-                   <div className="flex justify-between items-center mb-4 pb-4 border-b border-app/50 border-dashed">
-                     <div className="flex flex-col">
-                       <span className="text-[10px] font-bold text-secondary mb-1 uppercase tracking-tighter">今年累计停留时长</span>
-                       <div className="flex items-baseline gap-1.5">
-                         <span className="text-3xl font-mono font-bold text-brand group-hover:scale-105 transition-transform origin-left">
-                           {visaEntries.filter(x => x.entryDate.startsWith(new Date().getFullYear().toString())).reduce((acc, entry) => {
-                             const entryTime = new Date(entry.entryDate).getTime();
-                             const exitTime = entry.exitDate ? new Date(entry.exitDate).getTime() : Date.now();
-                             return acc + Math.floor((exitTime - entryTime) / (1000 * 60 * 60 * 24)) + 1;
-                           }, 0)}
-                         </span>
-                         <span className="text-xs font-sans font-bold text-secondary">DAYS</span>
-                       </div>
-                     </div>
-                     <div className="w-14 h-14 rounded-2xl bg-brand/10 flex items-center justify-center text-brand shadow-inner rotate-3 group-hover:rotate-0 transition-transform">
-                       <Globe size={28} />
-                     </div>
-                   </div>
-
-                   <div className="flex flex-col gap-3">
-                     <span className="text-[10px] font-bold text-secondary uppercase tracking-tighter mb-1">各国家/地区总逗留时间</span>
-                     {Object.entries(
-                        visaEntries.reduce((acc, entry) => {
-                          const entryTime = new Date(entry.entryDate).getTime();
-                          const exitTime = entry.exitDate ? new Date(entry.exitDate).getTime() : Date.now();
-                          const days = Math.floor((exitTime - entryTime) / (1000 * 60 * 60 * 24)) + 1;
-                          acc[entry.country] = (acc[entry.country] || 0) + days;
-                          return acc;
-                        }, {} as Record<string, number>)
-                     ).sort((a, b) => b[1] - a[1]).map(([country, days]) => (
-                        <div key={country} className="flex items-center justify-between">
-                           <span className="text-sm font-bold text-primary flex items-center gap-2">
-                             <div className="w-1.5 h-1.5 rounded-full bg-brand" /> {country}
-                           </span>
-                           <span className="text-xs font-mono text-tertiary">累计 <span className="text-brand font-bold">{days}</span> 天</span>
-                        </div>
-                     ))}
-                   </div>
-                 </div>
-               </div>
-             )}
-           </div>
-        </div>
-      )}
+      {activeTab === 'visa' && <VisaTab />}
 
       {activeTab !== 'home' && activeTab !== 'pomodoro' && activeTab !== 'profile' && activeTab !== 'data' && activeTab !== 'calendar' && activeTab !== 'visa' && (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-card-inner z-40 absolute inset-0 top-0">
@@ -3191,7 +3116,7 @@ export default function App() {
                             title="下班倒计时"
                             time={`${pad0(Math.floor(offWorkSecs / 3600))}:${pad0(Math.floor((offWorkSecs % 3600)/60))}:${pad0(offWorkSecs % 60)}`}
                             desc={`${config.endTime}下班`}
-                            progress={100 - (offWorkSecs / (config.hoursPerDay * 3600)) * 100}
+                            progress={100 - (offWorkSecs / (derivedHoursPerDay * 3600)) * 100}
                             icon={<Briefcase size={16} />}
                             color="green"
                          />
