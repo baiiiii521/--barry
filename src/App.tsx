@@ -119,9 +119,10 @@ const getLocalTzInfo = () => {
 
 const initialTz = getLocalTzInfo();
 
-const getWorkDaysInMonth = (year: number, month: number, region: string, restDays: number) => {
+const getWorkDaysInMonth = (year: number, month: number, region: string, restDays: number, upToDate?: number) => {
   let workdays = 0;
-  const days = new Date(year, month + 1, 0).getDate();
+  const maxDays = new Date(year, month + 1, 0).getDate();
+  const days = upToDate !== undefined ? Math.min(upToDate, maxDays) : maxDays;
   for (let i = 1; i <= days; i++) {
     const d = new Date(year, month, i);
     const day = d.getDay();
@@ -1430,13 +1431,52 @@ export default function App() {
   const firstPayObj = new Date(config.firstPayDate || config.joinDate);
   const monthsWorked = (localTime.getFullYear() - joinDateObj.getFullYear()) * 12 + localTime.getMonth() - joinDateObj.getMonth();
   const monthsPaid = Math.max(0, (localTime.getFullYear() - firstPayObj.getFullYear()) * 12 + localTime.getMonth() - firstPayObj.getMonth());
-  const dailyDeduction = (config.monthlySalary / 30);
+  const dailyDeduction = (config.monthlySalary / (currentMonthWorkDays || 22));
   const totalEarnedBeforeToday = Math.max(0, monthsPaid * config.monthlySalary - (totalUnpaidLeaves * dailyDeduction));
   
   const daysInMonth = new Date(localTime.getFullYear(), localTime.getMonth() + 1, 0).getDate();
-  const workRatio = currentMonthWorkDays / (daysInMonth || 30);
-  const earnedThisMonth = Math.max(0, (config.monthlySalary / daysInMonth) * Math.max(0, localTime.getDate() - 1) + earnedToday - (unpaidLeavesThisMonth * dailyDeduction));
-  const hoursThisMonth = Math.max(0, (config.hoursPerDay * workRatio) * Math.max(0, localTime.getDate() - 1) + (workSecondsToday / 3600));
+  // Recalculate past workdays inline to strictly guarantee correctness, skipping function calls
+  let pastWorkDaysThisMonth = 0;
+  const currentMonth = localTime.getMonth();
+  const currentYear = localTime.getFullYear();
+  let maxLoopDays = Math.max(0, localTime.getDate() - 1);
+  if (maxLoopDays > 31) maxLoopDays = 31;
+  if (maxLoopDays < 0) maxLoopDays = 0;
+  
+  for (let i = 1; i <= maxLoopDays; i++) {
+    const d = new Date(currentYear, currentMonth, i);
+    const day = d.getDay();
+    const isStandardWeekend = config.restDays === 2 ? (day === 0 || day === 6) : (day === 0);
+    const isCustomHol = isDateCustomHoliday(d, config.holidayRegion);
+    const isCustomWork = isDateCustomWorkday(d, config.holidayRegion);
+    if (isCustomHol) {
+      // It's a holiday, skip
+    } else if (isCustomWork) {
+      pastWorkDaysThisMonth++;
+    } else if (!isStandardWeekend) {
+      pastWorkDaysThisMonth++;
+    }
+  }
+
+  // Safe guard logic: On the first day of the month, pastWorkDays MUST strictly be 0.
+  const safePastWorkDaysThisMonth = localTime.getDate() <= 1 ? 0 : pastWorkDaysThisMonth;
+  const safeCurrentMonthWorkDays = Math.max(1, currentMonthWorkDays || 22);
+
+  const earnedThisMonth = Math.max(0, safePastWorkDaysThisMonth * (config.monthlySalary / safeCurrentMonthWorkDays) + earnedToday - (unpaidLeavesThisMonth * dailyDeduction));
+  const hoursThisMonth = Math.max(0, safePastWorkDaysThisMonth * config.hoursPerDay + (workSecondsToday / 3600));
+
+  console.log("DEBUG", {
+    localTime: localTime.toString(),
+    year: localTime.getFullYear(),
+    month: localTime.getMonth(),
+    date: localTime.getDate(),
+    max: Math.max(0, localTime.getDate() - 1),
+    pastWorkDaysThisMonth,
+    currentMonthWorkDays,
+    earnedToday,
+    earnedThisMonth,
+    hoursThisMonth
+  });
   
   let monthsThisYear = localTime.getMonth();
   if (joinDateObj.getFullYear() === localTime.getFullYear()) {
@@ -1446,14 +1486,30 @@ export default function App() {
   const displayEarned = conversionTimeframe === 'today' ? earnedToday : conversionTimeframe === 'month' ? earnedThisMonth : earnedThisYear;
 
   const daysThisWeek = localTime.getDay() === 0 ? 7 : localTime.getDay();
-  const earnedThisWeek = Math.max(0, (config.monthlySalary / daysInMonth) * Math.max(0, daysThisWeek - 1) + earnedToday);
+  // Compute how many workdays have passed this week
+  let pastWorkDaysThisWeek = 0;
+  for (let i = 1; i < daysThisWeek; i++) {
+    const d = new Date(localTime.getFullYear(), localTime.getMonth(), localTime.getDate() - (daysThisWeek - i));
+    const isHoliday = isDateCustomHoliday(d, config.holidayRegion);
+    const isWorkday = isDateCustomWorkday(d, config.holidayRegion);
+    const day = d.getDay();
+    const isStandardWeekend = config.restDays === 2 ? (day === 0 || day === 6) : (day === 0);
+    if (!isHoliday && (isWorkday || !isStandardWeekend)) {
+      pastWorkDaysThisWeek++;
+    }
+  }
+  const earnedThisWeek = Math.max(0, pastWorkDaysThisWeek * (config.monthlySalary / safeCurrentMonthWorkDays) + earnedToday);
   
-  const effectiveWorkThisWeek = Math.max(0, (daysThisWeek - 1) * config.hoursPerDay * 0.85 + (workSecondsToday - slackSecondsToday) / 3600);
-  const slackThisWeek = Math.max(0, (daysThisWeek - 1) * config.hoursPerDay * 0.15 + slackSecondsToday / 3600);
+  const effectiveWorkThisWeek = Math.max(0, pastWorkDaysThisWeek * config.hoursPerDay * 0.85 + (workSecondsToday - slackSecondsToday) / 3600);
+  const slackThisWeek = Math.max(0, pastWorkDaysThisWeek * config.hoursPerDay * 0.15 + slackSecondsToday / 3600);
   
-  const bestDayEarned = Math.max(earnedToday, (config.monthlySalary / daysInMonth));
+  const bestDayEarned = Math.max(earnedToday, (config.monthlySalary / (currentMonthWorkDays || 22)));
   const weekDaysStr = ['周日','周一','周二','周三','周四','周五','周六'];
-  const bestDayStr = weekDaysStr[localTime.getDay()];
+  let bestDayStr = weekDaysStr[localTime.getDay()];
+  if (bestDayEarned > earnedToday && pastWorkDaysThisWeek > 0) {
+    const yesterday = new Date(localTime.getFullYear(), localTime.getMonth(), localTime.getDate() - 1);
+    bestDayStr = weekDaysStr[yesterday.getDay()];
+  }
 
   // Countdown calculations
   const offWorkSecs = Math.max(0, endSecs - nowSecs);
@@ -2553,7 +2609,7 @@ export default function App() {
               <p>Architect & Author</p>
               <p className="font-semibold text-primary">Barry</p>
               <a href="mailto:barry.bai@hotwavehk.com" className="hover:text-brand transition-colors">barry.bai@hotwavehk.com</a>
-              <p className="mt-2 text-[10px] tracking-widest uppercase">Version 1.0.16</p>
+              <p className="mt-2 text-[10px] tracking-widest uppercase">Version 1.0.21</p>
            </div>
         </div>
       )}
@@ -2777,9 +2833,9 @@ export default function App() {
                
                if (isPastMonth) {
                   calEarned = config.monthlySalary;
-                  calHours = currentMonthWorkDays * config.hoursPerDay;
-                  calSlack = (slackLoss / localTime.getDate()) * currentMonthWorkDays;
-                  calOvertime = (overtimeLoss / localTime.getDate()) * currentMonthWorkDays;
+                  calHours = calWorkDays * config.hoursPerDay;
+                  calSlack = (slackLoss / Math.max(1, localTime.getDate())) * calWorkDays;
+                  calOvertime = (overtimeLoss / Math.max(1, localTime.getDate())) * calWorkDays;
                } else if (isFutureMonth) {
                   calEarned = 0;
                   calHours = 0;
@@ -2834,7 +2890,7 @@ export default function App() {
                  提示：点击日期记录备忘事项，所有数据均保留在您本地。
               </div>
               <div className="text-center pt-8 pb-4 opacity-30">
-                 <p className="text-[10px] font-mono tracking-widest text-tertiary uppercase">Version 1.0.16</p>
+                 <p className="text-[10px] font-mono tracking-widest text-tertiary uppercase">Version 1.0.21</p>
               </div>
             </div>
          </div>
