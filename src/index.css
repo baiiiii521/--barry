@@ -38,6 +38,20 @@ body.theme-light {
   --brand-green-hover: #047857;
 }
 
+.theme-dark {
+  --app-bg: #0d0d0d;
+  --card-bg: #141414;
+  --card-inner-bg: #0d0d0d;
+  --border-app: rgba(255, 255, 255, 0.05);
+  --border-app-strong: rgba(255, 255, 255, 0.1);
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  
+  --brand-green: #00FF41;
+  --brand-green-hover: #00cc33;
+}
+
 body {
   background-color: var(--frame-bg);
   transition: background-color 0.3s;

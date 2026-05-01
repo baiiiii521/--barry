@@ -4,6 +4,8 @@ import { Solar } from 'lunar-javascript';
 import Holidays from 'date-holidays';
 import html2canvas from 'html2canvas';
 
+import { isDateCustomHoliday, isDateCustomWorkday, getCustomHolidayName } from './holidays';
+
 const playAlertSound = (type: string) => {
   if (!type || type === 'none') return;
   try {
@@ -75,7 +77,9 @@ import {
   X,
   Play,
   Pause,
-  Square
+  Square,
+  Plane,
+  Globe
 } from 'lucide-react';
 
 const MILK_TEA_PRICE = 20;
@@ -116,20 +120,188 @@ const getLocalTzInfo = () => {
 const initialTz = getLocalTzInfo();
 
 const getWorkDaysInMonth = (year: number, month: number, region: string, restDays: number) => {
-  const hd = new Holidays(region);
   let workdays = 0;
   const days = new Date(year, month + 1, 0).getDate();
   for (let i = 1; i <= days; i++) {
     const d = new Date(year, month, i);
     const day = d.getDay();
-    const isRest = restDays === 2 ? (day === 0 || day === 6) : (day === 0);
-    const h = hd.isHoliday(d);
-    const isPublic = h && h.some((x: any) => x.type === 'public');
-    if (!isRest && !isPublic) {
+    const isStandardWeekend = restDays === 2 ? (day === 0 || day === 6) : (day === 0);
+    const isCustomHoliday = isDateCustomHoliday(d, region);
+    const isCustomWorkday = isDateCustomWorkday(d, region);
+    
+    // Logic: If it's a holiday, it's NOT a workday.
+    // If it's NOT a holiday:
+    //   If it's a weekend, it's only a workday if it's explicitly a custom make-up workday.
+    //   If it's a weekday, it's a workday unless it's explicitly a custom holiday.
+    
+    if (isCustomHoliday) {
+      // Not a workday
+    } else if (isCustomWorkday) {
+      workdays++;
+    } else if (!isStandardWeekend) {
       workdays++;
     }
   }
   return workdays || 21.75;
+};
+
+const FORTUNES = [
+  { level: '大吉', text: '今日大吉：摸鱼指数100%', detail: '今天老板出差，敞开摸吧！', emoji: '🎉', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：系统崩溃', detail: '趁现在，快去喝杯咖啡！', emoji: '☕', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：准点下班', detail: '没有任何阻碍，电梯都刚刚好。', emoji: '🏃', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：带薪拉屎', detail: '马桶犹如龙椅，舒适度满分。', emoji: '🚽', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：灵感爆棚', detail: '10分钟写完代码，剩下7小时50分摸鱼。', emoji: '💡', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：奖金翻倍', detail: '虽然是做梦，但梦里真的很爽。', emoji: '💰', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：神仙乙方', detail: '今天对接的人意外地好说话。', emoji: '✨', color: 'text-green-500' },
+  { level: '小吉', text: '今日小吉：无事发生', detail: '没有需求就是最好的需求。', emoji: '😌', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：会议数量-2', detail: '不用去听废话了，但也可能有个甲方找麻烦。', emoji: '📅', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：下午茶+1', detail: '隔壁部门请客，白嫖快乐。', emoji: '🍰', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：Bug秒解', detail: '随便改了一行，居然跑通了。', emoji: '🐛', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：网速起飞', detail: '刷B站一点都不卡。', emoji: '🚀', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：老板笑脸', detail: '虽然不知为何，但总比板着脸好。', emoji: '😏', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：食堂加肉', detail: '阿姨今天手没抖。', emoji: '🍗', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：不用排队', detail: '厕所空旷，空气清新。', emoji: '✨', color: 'text-yellow-500' },
+  { level: '平平', text: '今日平平：一切照旧', detail: '不好不坏，又混过一天。', emoji: '😐', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：假装忙碌', detail: '敲击键盘的速度与实际产出成反比。', emoji: '⌨️', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：准时打卡', detail: '晚一分钟算迟到，早一分钟算早退。', emoji: '⏰', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：5点准时下班', detail: '但有人想叫你加班。', emoji: '👀', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：喝水太多', detail: '一天去了8次洗手间，间接摸鱼。', emoji: '💧', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：忘带耳机', detail: '被迫听了一天同事的八卦。', emoji: '🎧', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：中午吃撑', detail: '下午犯困，生产力-50%。', emoji: '😴', color: 'text-blue-500' },
+  { level: '凶', text: '今日凶：天降大锅', detail: '不是你的Bug，但要你背锅。', emoji: '🥘', color: 'text-red-400' },
+  { level: '凶', text: '今日凶：产品改需求', detail: '刚写完的代码，又要推翻重来。', emoji: '📝', color: 'text-red-400' },
+  { level: '凶', text: '今日凶：钉钉狂响', detail: '响了23次，建议提前关机。', emoji: '🔔', color: 'text-red-400' },
+  { level: '凶', text: '今日凶：代码冲突', detail: '解Git冲突解到怀疑人生。', emoji: '💥', color: 'text-red-400' },
+  { level: '凶', text: '今日凶：周五发版', detail: '发版必崩，周末别想过了。', emoji: '🔥', color: 'text-red-400' },
+  { level: '凶', text: '今日凶：老板查岗', detail: '刚好在切后台，被抓个正着。', emoji: '😱', color: 'text-red-400' },
+  { level: '大凶', text: '今日大凶：全盘崩溃', detail: '没提交代码？节哀顺变。', emoji: '💀', color: 'text-red-600' },
+  { level: '大凶', text: '今日大凶：连环夺命Call', detail: '周报+月报+季报同时催，建议请病假。', emoji: '📱', color: 'text-red-600' },
+  { level: '大凶', text: '今日大凶：右眼狂跳', detail: '破财免灾，今天别点贵的奶茶。', emoji: '💸', color: 'text-red-600' },
+];
+
+function NiumaAvatar({ 
+  activeTheme, 
+  workSeconds, 
+  slackSeconds, 
+  overtimeSeconds, 
+  nowSecs, 
+  endSecs 
+}: { 
+  activeTheme: string, 
+  workSeconds: number, 
+  slackSeconds: number, 
+  overtimeSeconds: number, 
+  nowSecs: number, 
+  endSecs: number 
+}) {
+   const isSlackingTooMuch = slackSeconds > 2 * 3600;
+   const isWorkingTooMuch = workSeconds > 8 * 3600;
+   const isOvertime = overtimeSeconds > 0;
+   const isNearOffwork = nowSecs > (endSecs - 3600) && nowSecs < endSecs;
+
+   const baseEmojis: Record<string, string> = {
+      default: '🐮',
+      cyberpunk: '🤖',
+      retro: '👾',
+      classic: '🐴'
+   };
+   
+   let emoji = baseEmojis[activeTheme] || '🐮';
+   if (isSlackingTooMuch) emoji = '🐟';
+
+   return (
+      <div className="relative inline-flex items-center justify-center text-[42px] z-10 w-16 h-16 pointer-events-none">
+         <span className="relative z-10 filter drop-shadow-md transform hover:scale-110 transition-transform duration-300">{emoji}</span>
+         {isWorkingTooMuch && !isSlackingTooMuch && (
+            <div className="absolute inset-0 flex justify-center items-center gap-2 mt-2 z-20 opacity-80 mix-blend-multiply dark:mix-blend-normal">
+               <div className="w-2.5 h-2.5 rounded-full bg-black/60 blur-[1.5px] dark:bg-black/90"></div>
+               <div className="w-2.5 h-2.5 rounded-full bg-black/60 blur-[1.5px] dark:bg-black/90"></div>
+            </div>
+         )}
+         {isOvertime && (
+            <div className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-3 bg-[#e8c39e] rounded-b-[100%] rounded-t-[50%] z-20 border border-black/10 overflow-hidden shadow-inner">
+               <div className="w-full h-full bg-gradient-to-b from-white/30 to-transparent"></div>
+            </div>
+         )}
+         {isNearOffwork && (
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-3xl z-20 drop-shadow-lg scale-125">📿</div>
+         )}
+         <div className="text-xl absolute bottom-0 -right-2 z-30 drop-shadow-xl filter">💻</div>
+      </div>
+   );
+}
+
+const FOCUS_CONTAINERS = [
+  { id: 'incense', name: '线香(25m)', emoji: '🥢', defaultTime: 25 },
+  { id: 'candle', name: '蜡烛(30m)', emoji: '🕯️', defaultTime: 30 },
+  { id: 'hourglass', name: '沙漏(45m)', emoji: '⏳', defaultTime: 45 },
+  { id: 'coffee', name: '咖啡(20m)', emoji: '☕', defaultTime: 20 },
+  { id: 'cigarette', name: '香烟(10m)', emoji: '🚬', defaultTime: 10 },
+  { id: 'ice', name: '冰块(15m)', emoji: '🧊', defaultTime: 15 },
+  { id: 'sakura', name: '樱花(50m)', emoji: '🌸', defaultTime: 50 },
+  { id: 'moon', name: '月亮(90m)', emoji: '🌙', defaultTime: 90 },
+  { id: 'campfire', name: '篝火(60m)', emoji: '🔥', defaultTime: 60 },
+  { id: 'ramen', name: '泡面(5m)', emoji: '🍜', defaultTime: 5 }
+];
+
+const noiseNodes: Record<string, { audio: HTMLAudioElement, interval?: any }> = {};
+const playNoise = (type: string) => {
+   if (!noiseNodes[type]) {
+      const urls: Record<string, string> = {
+         rain: 'https://assets.mixkit.co/active_storage/sfx/2443/2443-prev.m4a',
+         fire: 'https://assets.mixkit.co/active_storage/sfx/3037/3037-prev.m4a',
+         train: 'https://assets.mixkit.co/active_storage/sfx/2387/2387-prev.m4a',
+         ocean: 'https://assets.mixkit.co/active_storage/sfx/1196/1196-prev.m4a',
+         birds: 'https://assets.mixkit.co/active_storage/sfx/1210/1210-prev.m4a',
+         wind: 'https://assets.mixkit.co/active_storage/sfx/1158/1158-prev.m4a',
+         stream: 'https://assets.mixkit.co/active_storage/sfx/2438/2438-prev.m4a',
+         keyboard: 'https://assets.mixkit.co/active_storage/sfx/611/611-prev.m4a',
+         clock: 'https://assets.mixkit.co/active_storage/sfx/1066/1066-prev.m4a'
+      };
+      if (urls[type]) {
+         const a = new Audio(urls[type]);
+         a.loop = true;
+         a.volume = 0;
+         noiseNodes[type] = { audio: a };
+      }
+   }
+   
+   const node = noiseNodes[type];
+   if (node && node.audio.paused) {
+      if (node.interval) clearInterval(node.interval);
+      node.audio.play().catch(() => {
+         // Silently fail if blocked by browser policy until next interaction
+      });
+      let vol = node.audio.volume;
+      node.interval = setInterval(() => {
+         vol = Math.min(0.4, vol + 0.02);
+         node.audio.volume = vol;
+         if (vol >= 0.4) {
+            clearInterval(node.interval);
+            node.interval = null;
+         }
+      }, 100);
+   }
+};
+
+const stopNoise = (type: string) => {
+   const node = noiseNodes[type];
+   if (node && !node.audio.paused) {
+      if (node.interval) clearInterval(node.interval);
+      let vol = node.audio.volume;
+      node.interval = setInterval(() => {
+         vol = Math.max(0, vol - 0.05);
+         node.audio.volume = vol;
+         if (vol <= 0) {
+            clearInterval(node.interval);
+            node.interval = null;
+            node.audio.pause();
+         }
+      }, 100);
+   }
+};
+const stopAllNoise = () => {
+   Object.keys(noiseNodes).forEach(stopNoise);
 };
 
 const MemoItems = React.memo(({ 
@@ -258,12 +430,19 @@ const MemoModal = React.memo(({
             <X size={20} />
           </button>
         </div>
-        
-        <div className="p-6 flex-1 overflow-y-auto space-y-4 no-scrollbar relative z-10 min-h-[300px]">
+
+        <div className="p-6 pt-3 flex-1 overflow-y-auto space-y-4 no-scrollbar relative z-10 min-h-[300px]">
           <MemoItems 
-            memos={localMemos} 
-            onToggle={toggleMemo} 
-            onDelete={deleteMemo} 
+            memos={localMemos.filter(m => !(m.type && m.type.includes('leave')))} 
+            onToggle={(idx) => {
+              // We need to find the real index
+              const realIdx = localMemos.findIndex(m => m.id === localMemos.filter(x => !(x.type && x.type.includes('leave')))[idx].id);
+              if (realIdx >= 0) toggleMemo(realIdx);
+            }} 
+            onDelete={(idx) => {
+              const realIdx = localMemos.findIndex(m => m.id === localMemos.filter(x => !(x.type && x.type.includes('leave')))[idx].id);
+              if (realIdx >= 0) deleteMemo(realIdx);
+            }} 
           />
         </div>
 
@@ -312,8 +491,6 @@ const CalendarGrid = React.memo(({
   memos: any, 
   onDateClick: (key: string) => void 
 }) => {
-  const hd = useMemo(() => new Holidays(config?.holidayRegion || 'CN'), [config?.holidayRegion]);
-  
   const daysInMonth = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0).getDate();
   const startDay = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1).getDay();
   
@@ -327,25 +504,32 @@ const CalendarGrid = React.memo(({
   for (let date = 1; date <= daysInMonth; date++) {
     const d = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), date);
     const dayOfWeek = d.getDay();
-    let isRest = config.restDays === 2 ? (dayOfWeek === 0 || dayOfWeek === 6) : (dayOfWeek === 0);
-    
-    const h = hd.isHoliday(d);
-    const isPublic = h && h.some((x: any) => x.type === 'public');
-    
-    let label = '上班';
-    let holidayName = '';
-    if (isPublic) {
-      isRest = true;
-      label = '假期';
-      holidayName = h.find((x: any) => x.type === 'public')?.name || h[0].name;
-    } else if (isRest) {
-      label = '休息';
-    }
-    
-    const isToday = date === localTime.getDate() && calendarDate.getMonth() === localTime.getMonth() && calendarDate.getFullYear() === localTime.getFullYear();
+    const isStandardWeekend = config.restDays === 2 ? (dayOfWeek === 0 || dayOfWeek === 6) : (dayOfWeek === 0);
+    const isCustomHoliday = isDateCustomHoliday(d, config.holidayRegion);
+    const isCustomWorkday = isDateCustomWorkday(d, config.holidayRegion);
+    const holidayName = getCustomHolidayName(d, config.holidayRegion);
+
     const memoKey = `${calendarDate.getFullYear()}-${(calendarDate.getMonth() + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`;
     const dayMemos = (memos || {})[memoKey] || [];
     const completedCount = dayMemos.filter((m: any) => m.completed).length;
+
+    const isPaidLeave = dayMemos.some((m: any) => m.type === 'paid_leave');
+    const isUnpaidLeave = dayMemos.some((m: any) => m.type === 'unpaid_leave');
+
+    let isRest = ((isStandardWeekend || isCustomHoliday) && !isCustomWorkday) || isPaidLeave || isUnpaidLeave;
+    
+    let label = '上班';
+    if (isPaidLeave) {
+      label = '带薪休假';
+    } else if (isUnpaidLeave) {
+      label = '无薪休假';
+    } else if (isRest) {
+      label = isStandardWeekend && !isCustomHoliday ? '休息' : '假期';
+    } else if (isCustomWorkday) {
+      label = '补班';
+    }
+    
+    const isToday = date === localTime.getDate() && calendarDate.getMonth() === localTime.getMonth() && calendarDate.getFullYear() === localTime.getFullYear();
     
     cells.push(
       <motion.div 
@@ -361,21 +545,26 @@ const CalendarGrid = React.memo(({
         
         {dayMemos.length > 0 && (
           <div className="absolute top-2 left-2 flex gap-0.5">
-            {dayMemos.slice(0, 3).map((m: any, idx: number) => (
-              <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-colors ${m.completed ? 'bg-brand/30' : 'bg-brand shadow-[0_0_4px_rgba(0,255,65,0.5)]'}`}></div>
-            ))}
-            {dayMemos.length > 3 && <div className="w-1 h-1 rounded-full bg-brand/20"></div>}
+            {dayMemos.slice(0, 3).map((m: any, idx: number) => {
+              if (m.type === 'paid_leave' || m.type === 'unpaid_leave') return null;
+              return <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-colors ${m.completed ? 'bg-brand/30' : 'bg-brand shadow-[0_0_4px_rgba(0,255,65,0.5)]'}`}></div>;
+            })}
+            {dayMemos.filter((m: any) => m.type !== 'paid_leave' && m.type !== 'unpaid_leave').length > 3 && <div className="w-1 h-1 rounded-full bg-brand/20"></div>}
           </div>
         )}
         
         <span className={`text-base md:text-xl font-bold mb-0.5 transition-colors group-hover:text-brand ${isToday ? 'text-primary' : 'text-primary'}`}>{date}</span>
         
-        {holidayName ? (
-          <span className="text-[8px] md:text-[10px] text-orange-500 font-bold leading-tight text-center truncate px-1 w-full bg-orange-500/10 rounded-md border border-orange-500/20">{holidayName}</span>
+        {isPaidLeave || isUnpaidLeave ? (
+           <span className={`text-[8px] md:text-[10px] font-bold leading-tight text-center truncate px-1 rounded-md border shadow-sm ${isPaidLeave ? 'text-blue-500 bg-blue-500/10 border-blue-500/20' : 'text-orange-500 bg-orange-500/10 border-orange-500/20'}`}>{label}</span>
+        ) : holidayName ? (
+          <span className="text-[8px] md:text-[10px] text-orange-500 font-bold leading-tight text-center truncate px-1 w-full max-w-[90%] bg-orange-500/10 rounded-md border border-orange-500/20">{holidayName}</span>
+        ) : isCustomWorkday ? (
+          <span className="text-[8px] md:text-[10px] text-red-500 font-bold leading-tight text-center truncate px-1 bg-red-500/10 rounded-md border border-red-500/20 shadow-sm">{label}</span>
         ) : (
           <div className="flex items-center gap-1">
              <span className={`text-[9px] md:text-[11px] font-medium ${isToday ? 'text-brand' : (isRest ? 'text-secondary/50' : 'text-tertiary')}`}>{label}</span>
-             {dayMemos.length > 0 && completedCount === dayMemos.length && <span className="text-[10px]">✅</span>}
+             {dayMemos.length > 0 && completedCount === dayMemos.length && !isPaidLeave && !isUnpaidLeave && <span className="text-[10px]">✅</span>}
           </div>
         )}
       </motion.div>
@@ -388,6 +577,253 @@ const CalendarGrid = React.memo(({
     </div>
   );
 });
+
+function FocusVisualizer({ 
+  containerId, 
+  timeLeft, 
+  lengthMins, 
+  isActive 
+}: { 
+  containerId: string, 
+  timeLeft: number, 
+  lengthMins: number, 
+  isActive: boolean 
+}) {
+   const totalSecs = lengthMins * 60;
+   const progress = 1 - (timeLeft / totalSecs); // 0 to 1
+   const ratio = timeLeft / totalSecs; // 1 to 0
+   const isLast5Mins = timeLeft <= 300 && timeLeft > 0;
+   const isDone = timeLeft === 0;
+
+   // Base renderer 
+   let visual = null;
+   const container = FOCUS_CONTAINERS.find(c => c.id === containerId);
+
+   if (containerId === 'incense') {
+      visual = (
+         <div className="relative w-6 h-40 flex flex-col justify-end items-center mx-auto">
+           <div 
+             className="w-1.5 bg-gradient-to-t from-[#8E614A] to-[#D3A98F] rounded-t-full relative transition-[height] duration-1000 ease-linear shadow-[inset_0_0_2px_rgba(0,0,0,0.5)] overflow-visible"
+             style={{ height: `${Math.max(2, ratio * 100)}%` }}
+           >
+              {(isActive || timeLeft !== totalSecs) && timeLeft > 0 && (
+                <div className={`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full animate-pulse transition-colors duration-1000 ${isLast5Mins ? 'bg-red-500 shadow-[0_0_12px_rgba(255,0,0,1)]' : 'bg-gradient-to-r from-red-500 to-orange-400 shadow-[0_0_8px_rgba(255,165,0,0.8)]'}`}>
+                  {isActive && (
+                    <motion.div 
+                      key="smoke"
+                      initial={{ opacity: 0, y: 0, scale: 0.8 }}
+                      animate={{ opacity: [0, isLast5Mins ? 0.8 : 0.5, 0], y: -50, scale: isLast5Mins ? 2 : 1.5, x: [0, -15, 20, -10] }}
+                      transition={{ duration: isLast5Mins ? 2 : 3, repeat: Infinity, ease: "linear" }}
+                      className={`absolute -top-4 left-1/2 -translate-x-1/2 w-6 h-12 blur-md rounded-full pointer-events-none ${isLast5Mins ? 'bg-orange-500/30' : 'bg-gray-300/40'}`}
+                    />
+                  )}
+                </div>
+              )}
+           </div>
+           <div className={`w-1.5 absolute bottom-3 bg-[#A0A0A0] transition-[height] duration-1000 rounded-b opacity-80`} style={{ height: `${progress * 100}%` }}></div>
+           <div className="w-16 h-3 bg-gradient-to-b from-[#555] to-[#333] rounded-b-xl border-t-2 border-[#fff]/10 shadow-[0_4px_10px_rgba(0,0,0,0.5)] shrink-0 z-10"></div>
+           <div className="w-20 h-1 bg-black/20 blur-sm rounded-full mt-1"></div>
+         </div>
+      );
+   } else if (containerId === 'candle') {
+      visual = (
+         <div className="relative w-16 h-32 flex flex-col justify-end items-center mb-4">
+            <div 
+               className="w-12 bg-gradient-to-b from-yellow-50 to-orange-100 rounded-t-xl transition-all duration-1000 ease-linear shadow-[inset_-2px_0_5px_rgba(0,0,0,0.1)] relative"
+               style={{ height: `${Math.max(20, ratio * 100)}%` }}
+            >
+                {isActive && timeLeft > 0 && (
+                   <motion.div 
+                     animate={{ opacity: [0.8, 1, 0.8], scale: [0.9, 1.1, 0.9], y: [-2, 2, -2] }}
+                     transition={{ duration: 1, repeat: Infinity }}
+                     className="absolute -top-6 left-1/2 -translate-x-1/2 w-6 h-8 bg-gradient-to-t from-orange-500 to-yellow-200 rounded-full blur-[2px] opacity-80"
+                   />
+                )}
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-3 bg-gray-700/80 rounded-t-sm"></div>
+            </div>
+            <div className="w-16 h-2 bg-amber-800 rounded-b border-t border-amber-900 z-10 shrink-0"></div>
+         </div>
+      );
+  } else if (containerId === 'coffee' || containerId === 'ramen') {
+      const isRamen = containerId === 'ramen';
+      visual = (
+         <div className="relative w-24 h-24 flex justify-center items-center mb-4">
+            <div className={`text-6xl filter drop-shadow-xl ${progress === 0 ? 'grayscale opacity-50' : ''}`}>
+               {isRamen ? '🍜' : '☕'}
+            </div>
+            {(isActive || progress < 1) && progress > 0 && (
+               <motion.div 
+                 initial={{ opacity: 0, y: 0 }}
+                 animate={{ opacity: [0, progress * 0.6, 0], y: -30 - (progress * 20), x: [0, 10, -5] }}
+                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                 className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-12 bg-white/30 blur-md rounded-full pointer-events-none"
+               />
+            )}
+         </div>
+      );
+  } else if (containerId === 'cigarette') {
+      visual = (
+         <div className="relative w-40 h-8 flex justify-end items-center mb-8">
+            <div className="absolute right-0 w-8 h-6 bg-orange-600/80 rounded-r-md border border-orange-800/20 shadow-inner"></div>
+            <div 
+              className="h-6 bg-[#f8f9fa] border-y border-gray-100 rounded-l-sm flex justify-start items-center transition-[width] duration-1000 ease-linear shadow-sm"
+              style={{ width: `${Math.max(10, progress * 100)}%` }}
+            >
+               {(isActive || progress < 1) && progress > 0 && (
+                  <div className="w-1.5 h-6 bg-red-500 rounded-l-full shadow-[0_0_10px_rgba(255,0,0,0.8)] animate-pulse relative">
+                     {isActive && (
+                       <motion.div 
+                         initial={{ opacity: 0, y: 0, x: 0, scale: 0.8 }}
+                         animate={{ opacity: [0, 0.4, 0], y: -40, x: -20, scale: 2 }}
+                         transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                         className="absolute -top-2 -left-2 w-4 h-10 bg-gray-300/30 blur-md rounded-full pointer-events-none"
+                       />
+                     )}
+                  </div>
+               )}
+            </div>
+            {/* Ashes line */}
+            <div className="flex-1 h-2 mx-1 flex items-center justify-start opacity-30">
+               {progress < 0.8 && <div className="w-4 h-1.5 bg-gray-600 rounded blur-[1px]"></div>}
+               {progress < 0.5 && <div className="w-6 h-1 bg-gray-700 rounded blur-[1px] ml-1"></div>}
+               {progress < 0.2 && <div className="w-4 h-2 bg-gray-500 rounded blur-[1.5px] ml-1"></div>}
+            </div>
+         </div>
+      );
+  } else if (containerId === 'ice') {
+      visual = (
+         <div className="relative w-32 h-32 flex justify-center items-center mb-4">
+            <div 
+               className="bg-blue-100/40 backdrop-blur-md border border-white/40 shadow-[0_0_20px_rgba(255,255,255,0.4)] flex justify-center items-center transition-all duration-1000 ease-linear"
+               style={{ 
+                 width: `${Math.max(20, progress * 100)}%`, 
+                 height: `${Math.max(20, progress * 100)}%`,
+                 borderRadius: `${10 + (1-progress)*40}%`
+               }}
+            >
+               <div className="w-1/2 h-1/2 bg-white/30 rounded-full blur-sm absolute top-2 left-2"></div>
+               {isActive && progress > 0 && (
+                 <motion.div
+                   animate={{ y: [0, 40], opacity: [1, 0] }}
+                   transition={{ duration: 2, repeat: Infinity, ease: "easeIn" }}
+                   className="absolute bottom-[-10px] w-2 h-2 bg-blue-200/60 rounded-full blur-[0.5px]"
+                 />
+               )}
+            </div>
+            {/* Water puddle */}
+            {progress < 1 && (
+               <div 
+                 className="absolute -bottom-4 bg-blue-200/20 backdrop-blur-sm rounded-[100%] transition-all duration-1000"
+                 style={{ width: `${60 + (1-progress)*40}%`, height: '20px' }}
+               />
+            )}
+         </div>
+      );
+  } else if (containerId === 'sakura') {
+      visual = (
+         <div className="relative w-32 h-40 flex justify-center items-end mb-4 overflow-hidden">
+            <div className={`text-6xl absolute z-10 transition-opacity duration-1000 ${progress === 0 ? 'opacity-20 grayscale' : 'opacity-100'}`}>🌸</div>
+            {isActive && progress > 0 && Array.from({length: 3}).map((_, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, y: -40, x: (Math.random() - 0.5) * 40, rotate: 0 }}
+                  animate={{ opacity: [0, 1, 0], y: 60, x: (Math.random() - 0.5) * 60, rotate: 360 }}
+                  transition={{ duration: 3 + Math.random() * 2, repeat: Infinity, delay: i * 1.5 }}
+                  className="absolute z-20 text-sm text-pink-300 drop-shadow-sm pointer-events-none"
+                >
+                  ✿
+                </motion.div>
+            ))}
+            {/* fallen leaves */}
+            <div className="absolute bottom-0 w-full h-8 flex justify-center items-end gap-1 opacity-60">
+               {progress < 0.8 && <span className="text-xs text-pink-300 -rotate-12 translate-y-1">✿</span>}
+               {progress < 0.5 && <span className="text-[10px] text-pink-300 rotate-45 translate-y-2">✿</span>}
+               {progress < 0.2 && <span className="text-xs text-pink-300 rotate-90 w-4 translate-x-2">✿</span>}
+            </div>
+         </div>
+      );
+  } else if (containerId === 'moon') {
+      visual = (
+         <div className="relative w-40 h-40 flex justify-center items-center mb-4 border-b border-primary/10 overflow-hidden">
+            <motion.div 
+               className="absolute w-20 h-20 bg-yellow-100 rounded-full shadow-[0_0_30px_rgba(255,255,200,0.8)] flex justify-center items-center"
+               style={{
+                  top: `${20 + (1-progress)*60}%`,
+                  left: `${10 + (1-progress)*80}%`,
+                  opacity: progress + 0.2
+               }}
+            >
+               <div className="w-6 h-6 bg-black/10 rounded-full absolute top-4 left-4 blur-[2px]"></div>
+               <div className="w-8 h-8 bg-black/5 rounded-full absolute bottom-4 right-2 blur-[1px]"></div>
+            </motion.div>
+         </div>
+      );
+  } else if (containerId === 'campfire') {
+      visual = (
+         <div className="relative w-32 h-32 flex justify-center items-end flex-col mb-4">
+            <div className="relative w-full h-24 flex justify-center items-end mb-2">
+               {(isActive || progress < 1) && progress > 0 && (
+                 <>
+                   <motion.div 
+                     animate={{ height: [`${progress*100}%`, `${progress*80}%`, `${progress*110}%`] }}
+                     transition={{ duration: 0.5, repeat: Infinity, ease: 'easeInOut' }}
+                     className="absolute bottom-1 w-6 rounded-t-full bg-yellow-400 blur-[2px] opacity-80 mix-blend-screen"
+                   />
+                   <motion.div 
+                     animate={{ height: [`${progress*80}%`, `${progress*120}%`, `${progress*70}%`] }}
+                     transition={{ duration: 0.6, repeat: Infinity, ease: 'easeInOut', delay: 0.1 }}
+                     className="absolute bottom-1 -left-2 w-8 rounded-t-full bg-orange-500 blur-[3px] opacity-90 mix-blend-screen"
+                   />
+                   <motion.div 
+                     animate={{ height: [`${progress*110}%`, `${progress*70}%`, `${progress*90}%`] }}
+                     transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+                     className="absolute bottom-1 -right-2 w-8 rounded-t-full bg-red-500 blur-[4px] opacity-70 mix-blend-screen"
+                   />
+                 </>
+               )}
+            </div>
+            {/* Logs connecting to ember */}
+            <div className="relative w-16 h-8 flex justify-center items-center shrink-0">
+               <div className="absolute w-14 h-4 bg-amber-900 rounded-sm rotate-12 border border-black/40 shadow-xl overflow-hidden">
+                 <div className="w-full h-full bg-black/40 transition-opacity duration-1000" style={{opacity: 1-progress}}></div>
+               </div>
+               <div className="absolute w-14 h-4 bg-amber-800 rounded-sm -rotate-12 border border-black/40 shadow-xl overflow-hidden">
+                 <div className="w-full h-full bg-black/40 transition-opacity duration-1000" style={{opacity: 1-progress}}></div>
+               </div>
+               {(isActive || progress < 1) && progress > 0 && (
+                 <motion.div 
+                   animate={{ opacity: [0.5, 1, 0.5] }}
+                   transition={{ duration: 2, repeat: Infinity }}
+                   className="absolute w-6 h-2 bg-orange-500 blur-[2px] rounded-full"
+                 />
+               )}
+            </div>
+         </div>
+      );
+  } else {
+      // generic emoji fallback for others
+      visual = (
+         <div className="relative w-32 h-32 flex justify-center items-center mb-4">
+            <div className={`text-7xl transition-all duration-1000 filter drop-shadow-xl ${progress === 0 ? 'grayscale opacity-50' : ''}`} style={{
+                transform: `scale(${0.8 + progress * 0.2}) translateY(${ isActive ? Math.sin(progress*100)*5 : 0 }px)`
+            }}>
+               {container.emoji}
+            </div>
+         </div>
+      );
+  }
+
+   return (
+      <div className="relative w-full flex flex-col items-center justify-center min-h-[220px]">
+         <div className="flex-1 flex items-end justify-center mb-6 z-0">
+            {visual}
+         </div>
+         <div className="text-[3.5rem] font-mono font-bold text-primary tabular-nums tracking-tighter filter drop-shadow-lg z-10 leading-none">
+           {pad0(Math.floor(timeLeft / 60))}:{pad0(Math.floor(timeLeft % 60))}
+         </div>
+      </div>
+   );
+}
 
 export default function App() {
   const [profiles, setProfiles] = useState(() => {
@@ -402,9 +838,13 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('niuma_profiles', JSON.stringify(profiles));
   }, [profiles]);
-  const [isLightMode, setIsLightMode] = useState(false);
+  const [isLightMode, setIsLightMode] = useState(() => {
+    const saved = localStorage.getItem('isLightMode');
+    return saved ? saved === 'true' : true;
+  });
 
   useEffect(() => {
+    localStorage.setItem('isLightMode', isLightMode.toString());
     if (isLightMode) {
       document.body.classList.add('theme-light');
     } else {
@@ -438,6 +878,7 @@ export default function App() {
       pomodoroStartSound: 'none',
       pomodoroEndSound: 'bell',
       pomodoroBreakSound: 'chime',
+      avatarTheme: 'default',
     };
     try {
       const savedConfig = localStorage.getItem('niuma_config');
@@ -460,12 +901,97 @@ export default function App() {
 
 
 
+  const [runtimeState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('niuma_runtime_state');
+      if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return null;
+  });
+  
+  const todayStr = new Date().toLocaleDateString("en-US", {timeZone: config.localTimezone});
+  const isSameDay = runtimeState?.date === todayStr;
+  const timeSinceLastTick = Math.max(0, (Date.now() - (runtimeState?.lastGlobalTick || Date.now())) / 1000);
+
+  const [dailyFortune, setDailyFortune] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('niuma_fortune');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.date === todayStr) return parsed.fortune;
+      }
+    } catch(e) {}
+    return null;
+  });
+  const [fortuneModalOpen, setFortuneModalOpen] = useState(false);
+  
+  const drawFortune = useCallback(() => {
+    if (dailyFortune) {
+      setFortuneModalOpen(true);
+      return;
+    }
+    const r = Math.floor(Math.random() * FORTUNES.length);
+    const fortune = FORTUNES[r];
+    setDailyFortune(fortune);
+    setFortuneModalOpen(true);
+    localStorage.setItem('niuma_fortune', JSON.stringify({ date: todayStr, fortune }));
+  }, [todayStr, dailyFortune]);
+
   // === Pomodoro State ===
-  const [pomodoroLength, setPomodoroLength] = useState(25); // in minutes
-  const [pomodoroTimeLeft, setPomodoroTimeLeft] = useState(25 * 60); // in seconds
-  const [isPomodoroActive, setIsPomodoroActive] = useState(false);
-  const [pomodoroTask, setPomodoroTask] = useState("");
-  const [completedPomodoros, setCompletedPomodoros] = useState(0);
+  const [pomodoroContainer, setPomodoroContainer] = useState(() => localStorage.getItem('pomodoroContainer') || 'incense');
+  const [activeBgms, setActiveBgms] = useState<string[]>(() => {
+    try {
+       const saved = localStorage.getItem('activeBgms');
+       if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return [];
+  });
+
+  useEffect(() => localStorage.setItem('pomodoroContainer', pomodoroContainer), [pomodoroContainer]);
+  useEffect(() => localStorage.setItem('activeBgms', JSON.stringify(activeBgms)), [activeBgms]);
+
+  useEffect(() => {
+    const allSupportedBgms = ['rain', 'fire', 'train', 'ocean', 'birds', 'wind', 'stream', 'keyboard', 'clock'];
+    allSupportedBgms.forEach(bgm => {
+       if (activeBgms.includes(bgm)) {
+          playNoise(bgm);
+       } else {
+          stopNoise(bgm);
+       }
+    });
+  }, [activeBgms]);
+  const [pomodoroLength, setPomodoroLength] = useState(() => runtimeState?.pomodoroLength ?? 25); // in minutes
+  const [pomodoroTimeLeft, setPomodoroTimeLeft] = useState(() => {
+    if (runtimeState?.pomodoroTimeLeft !== undefined) {
+      if (runtimeState.isPomodoroActive) {
+         return Math.max(0, runtimeState.pomodoroTimeLeft - timeSinceLastTick);
+      }
+      return runtimeState.pomodoroTimeLeft;
+    }
+    return 25 * 60;
+  }); // in seconds
+  const [isPomodoroActive, setIsPomodoroActive] = useState(() => {
+    if (runtimeState?.isPomodoroActive && runtimeState?.pomodoroTimeLeft !== undefined) {
+       return (runtimeState.pomodoroTimeLeft - timeSinceLastTick > 0);
+    }
+    return false;
+  });
+  const [pomodoroTask, setPomodoroTask] = useState(() => runtimeState?.pomodoroTask ?? "");
+  const [completedPomodoros, setCompletedPomodoros] = useState(() => runtimeState?.completedPomodoros ?? 0);
+
+  // === Visa State ===
+  const [visaEntries, setVisaEntries] = useState<{ id: string, entryDate: string, exitDate: string, country: string, validityDays: number, entryAirport: string, exitAirport: string }[]>(() => {
+    try {
+      const saved = localStorage.getItem('visaEntries');
+      if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return [];
+  });
+  const [showFinishedVisa, setShowFinishedVisa] = useState(true);
+  
+  useEffect(() => {
+    localStorage.setItem('visaEntries', JSON.stringify(visaEntries));
+  }, [visaEntries]);
 
   // === Reminder State ===
   const [reminderText, setReminderText] = useState('该摸一会儿鱼了，休息一下！');
@@ -534,9 +1060,13 @@ export default function App() {
   const [shareImgUrl, setShareImgUrl] = useState('');
   const shareRef = useRef<HTMLDivElement>(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
+  
   const [now, setNow] = useState(new Date());
   
-  const localTime = new Date(now.toLocaleString("en-US", {timeZone: config.localTimezone}));
+  const localTime = useMemo(() => new Date(now.toLocaleString("en-US", {timeZone: config.localTimezone})), [now, config.localTimezone]);
+
+  const initialLeaveDate = `${localTime.getFullYear()}-${(localTime.getMonth() + 1).toString().padStart(2, '0')}-${localTime.getDate().toString().padStart(2, '0')}`;
+  const [leaveDateStr, setLeaveDateStr] = useState(initialLeaveDate);
   
   const generateShareImage = async () => {
     if (!shareRef.current) return;
@@ -558,7 +1088,7 @@ export default function App() {
   const minuteRate = hourlyRate / 60;
   const secondRate = minuteRate / 60;
 
-  const [isSlacking, setIsSlacking] = useState(false);
+  const [isSlacking, setIsSlacking] = useState(() => isSameDay ? (runtimeState?.isSlacking ?? false) : false);
   const [toast, setToast] = useState<{message: string, type: 'info'|'warn'}|null>(null);
 
   useEffect(() => {
@@ -573,16 +1103,33 @@ export default function App() {
   }, []);
 
   const handleMemoModalSave = useCallback((date: string, updatedMemos: any[]) => {
-    setMemos(prev => ({
+    setMemos((prev: any) => ({
       ...prev,
       [date]: updatedMemos
     }));
   }, []);
 
+  const toggleLeaveType = useCallback((type: string) => {
+    setMemos((prev: any) => {
+       const prevMemos = prev[leaveDateStr] || [];
+       const hasLeaveType = prevMemos.some((m: any) => m.type === type);
+       let newMemos = prevMemos.filter((m: any) => !(m.type && m.type.includes('leave')));
+       if (!hasLeaveType) {
+          newMemos.unshift({
+             id: 'sys_leave_' + Date.now(),
+             text: type === 'paid_leave' ? '🌟 带薪假' : '🍂 无薪假',
+             type,
+             completed: true
+          });
+       }
+       return { ...prev, [leaveDateStr]: newMemos };
+    });
+  }, [leaveDateStr]);
+
   const handleDateClick = useCallback((key: string) => {
     setSelectedMemoDate(key);
   }, []);
-  const [isOvertime, setIsOvertime] = useState(false);
+  const [isOvertime, setIsOvertime] = useState(() => isSameDay ? (runtimeState?.isOvertime ?? false) : false);
   const [showMoney, setShowMoney] = useState(true);
   const [showUSD, setShowUSD] = useState(false);
   const [excuse, setExcuse] = useState('刚刚我的键盘卡主了，我在测试硬件抗冲击力...');
@@ -648,9 +1195,40 @@ export default function App() {
   };
 
   // Accumulated data
-  const [slackSecondsToday, setSlackSecondsToday] = useState(0);
-  const [overtimeSecondsToday, setOvertimeSecondsToday] = useState(0);
+  const [slackSecondsToday, setSlackSecondsToday] = useState(() => {
+    if (isSameDay) {
+       let base = runtimeState?.slackSecondsToday || 0;
+       if (runtimeState?.isSlacking) base += timeSinceLastTick;
+       return base;
+    }
+    return 0;
+  });
+  const [overtimeSecondsToday, setOvertimeSecondsToday] = useState(() => {
+    if (isSameDay) {
+       let base = runtimeState?.overtimeSecondsToday || 0;
+       if (runtimeState?.isOvertime) base += timeSinceLastTick;
+       return base;
+    }
+    return 0;
+  });
   
+  useEffect(() => {
+    const d = new Date().toLocaleDateString("en-US", {timeZone: config.localTimezone});
+    localStorage.setItem('niuma_runtime_state', JSON.stringify({
+      date: d,
+      slackSecondsToday,
+      overtimeSecondsToday,
+      isSlacking,
+      isOvertime,
+      pomodoroTimeLeft,
+      pomodoroLength,
+      isPomodoroActive,
+      pomodoroTask,
+      completedPomodoros,
+      lastGlobalTick: Date.now()
+    }));
+  }, [config.localTimezone, slackSecondsToday, overtimeSecondsToday, isSlacking, isOvertime, pomodoroTimeLeft, pomodoroLength, isPomodoroActive, pomodoroTask, completedPomodoros]);
+
   // Real-time timepieces and lunar
   const otherTime = new Date(now.toLocaleString("en-US", {timeZone: config.otherTimezone}));
   const lunar = Solar.fromDate(localTime).getLunar();
@@ -668,9 +1246,34 @@ export default function App() {
   const lunchStartSecs = getSecondsFromMidnight(config.lunchStartTime);
   const lunchEndSecs = getSecondsFromMidnight(config.lunchEndTime);
 
-  const todayDay = localTime.getDay();
-  const isRestDay = (config.restDays === 2 && (todayDay === 0 || todayDay === 6)) || (config.restDays === 1 && todayDay === 0);
+  const isPublicHoliday = useMemo(() => {
+    return isDateCustomHoliday(localTime, config.holidayRegion);
+  }, [localTime, config.holidayRegion]);
 
+  const isMakeUpWorkday = useMemo(() => {
+    return isDateCustomWorkday(localTime, config.holidayRegion);
+  }, [localTime, config.holidayRegion]);
+
+  const memoTodayStr = `${localTime.getFullYear()}-${(localTime.getMonth() + 1).toString().padStart(2, '0')}-${localTime.getDate().toString().padStart(2, '0')}`;
+  const todayMemos = (memos || {})[memoTodayStr] || [];
+  const isTodayPaidLeave = todayMemos.some((m: any) => m.type === 'paid_leave');
+  const isTodayUnpaidLeave = todayMemos.some((m: any) => m.type === 'unpaid_leave');
+
+  const todayDay = localTime.getDay();
+  const isWeekend = (config.restDays === 2 && (todayDay === 0 || todayDay === 6)) || (config.restDays === 1 && todayDay === 0);
+  const isHolidayOrWeekend = (isWeekend || isPublicHoliday) && !isMakeUpWorkday;
+  const isRestDay = isHolidayOrWeekend || isTodayPaidLeave || isTodayUnpaidLeave;
+  
+  let restTypeLabel = "周末休息";
+  const todayHolidayName = getCustomHolidayName(localTime, config.holidayRegion);
+  if (isTodayPaidLeave) {
+     restTypeLabel = "带薪休假";
+  } else if (isTodayUnpaidLeave) {
+     restTypeLabel = "无薪休假";
+  } else if (todayHolidayName) {
+     restTypeLabel = `${todayHolidayName}假期`;
+  }
+  
   const isLunchBreak = config.hasLunchBreak && nowSecs >= lunchStartSecs && nowSecs < lunchEndSecs;
   const isCurrentlyWorkingTime = !isRestDay && nowSecs >= startSecs && nowSecs < endSecs && !isLunchBreak;
 
@@ -681,6 +1284,14 @@ export default function App() {
       if (nowSecs > lunchStartSecs) {
          autoWorkSecs -= (Math.min(nowSecs, lunchEndSecs) - lunchStartSecs);
       }
+    }
+  } else if (isTodayPaidLeave) {
+    // Treat paid leave as if fully worked until now, or full day if past end time (for earning calculation context)
+    if (nowSecs > startSecs) {
+       autoWorkSecs = Math.min(nowSecs, endSecs) - startSecs;
+       if (config.hasLunchBreak && nowSecs > lunchStartSecs) {
+          autoWorkSecs -= (Math.min(nowSecs, lunchEndSecs) - lunchStartSecs);
+       }
     }
   }
   const workSecondsToday = Math.max(0, autoWorkSecs);
@@ -711,18 +1322,27 @@ export default function App() {
     const worker = new Worker(URL.createObjectURL(blob));
     workerRef.current = worker;
     
-    worker.onmessage = () => {
+    const handleTick = () => {
       const current = Date.now();
       const deltaSecs = (current - lastGlobalTickRef.current) / 1000;
+      
+      const lastDateStr = new Date(lastGlobalTickRef.current).toLocaleDateString("en-US", {timeZone: configRef.current.localTimezone});
+      const currDateStr = new Date(current).toLocaleDateString("en-US", {timeZone: configRef.current.localTimezone});
+
       lastGlobalTickRef.current = current;
       
       setNow(new Date(current));
       
-      if (isSlackingRef.current) {
-        setSlackSecondsToday(prev => prev + deltaSecs);
-      }
-      if (isOvertimeRef.current) {
-        setOvertimeSecondsToday(prev => prev + deltaSecs);
+      if (lastDateStr !== currDateStr) {
+         setSlackSecondsToday(0);
+         setOvertimeSecondsToday(0);
+      } else {
+        if (isSlackingRef.current) {
+          setSlackSecondsToday(prev => prev + deltaSecs);
+        }
+        if (isOvertimeRef.current) {
+          setOvertimeSecondsToday(prev => prev + deltaSecs);
+        }
       }
 
       // Handle Pomodoro background tick
@@ -756,11 +1376,21 @@ export default function App() {
       }
     };
     
+    worker.onmessage = handleTick;
+    
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+         handleTick();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    
     worker.postMessage('start');
     
     return () => {
       worker.postMessage('stop');
       worker.terminate();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);
 
@@ -771,23 +1401,48 @@ export default function App() {
   const ex = showUSD ? config.exchangeRateUsd : 1;
   const hide = (val: string) => showMoney ? val : '****';
   
+  // Leave calculations
+  let totalUnpaidLeaves = 0;
+  let unpaidLeavesThisYear = 0;
+  let unpaidLeavesThisMonth = 0;
+  const currentMonthPrefix = `${localTime.getFullYear()}-${(localTime.getMonth()+1).toString().padStart(2, '0')}`;
+  const currentYearPrefix = `${localTime.getFullYear()}-`;
+  const todayVal = `${localTime.getFullYear()}${(localTime.getMonth()+1).toString().padStart(2, '0')}${localTime.getDate().toString().padStart(2, '0')}`;
+  
+  Object.keys(memos || {}).forEach(key => {
+    const keyVal = key.replace(/-/g, '');
+    if (keyVal <= todayVal) {
+      const dayMemos = memos[key];
+      if (Array.isArray(dayMemos) && dayMemos.some((m: any) => m.type === 'unpaid_leave')) {
+         totalUnpaidLeaves++;
+         if (key.startsWith(currentYearPrefix)) {
+             unpaidLeavesThisYear++;
+         }
+         if (key.startsWith(currentMonthPrefix)) {
+             unpaidLeavesThisMonth++;
+         }
+      }
+    }
+  });
+
   // Estimations for summary
   const joinDateObj = new Date(config.joinDate);
   const firstPayObj = new Date(config.firstPayDate || config.joinDate);
   const monthsWorked = (localTime.getFullYear() - joinDateObj.getFullYear()) * 12 + localTime.getMonth() - joinDateObj.getMonth();
   const monthsPaid = Math.max(0, (localTime.getFullYear() - firstPayObj.getFullYear()) * 12 + localTime.getMonth() - firstPayObj.getMonth());
-  const totalEarnedBeforeToday = Math.max(0, monthsPaid * config.monthlySalary);
+  const dailyDeduction = (config.monthlySalary / 30);
+  const totalEarnedBeforeToday = Math.max(0, monthsPaid * config.monthlySalary - (totalUnpaidLeaves * dailyDeduction));
   
   const daysInMonth = new Date(localTime.getFullYear(), localTime.getMonth() + 1, 0).getDate();
   const workRatio = currentMonthWorkDays / (daysInMonth || 30);
-  const earnedThisMonth = Math.max(0, (config.monthlySalary / daysInMonth) * Math.max(0, localTime.getDate() - 1) + earnedToday);
+  const earnedThisMonth = Math.max(0, (config.monthlySalary / daysInMonth) * Math.max(0, localTime.getDate() - 1) + earnedToday - (unpaidLeavesThisMonth * dailyDeduction));
   const hoursThisMonth = Math.max(0, (config.hoursPerDay * workRatio) * Math.max(0, localTime.getDate() - 1) + (workSecondsToday / 3600));
   
   let monthsThisYear = localTime.getMonth();
   if (joinDateObj.getFullYear() === localTime.getFullYear()) {
       monthsThisYear = Math.max(0, localTime.getMonth() - joinDateObj.getMonth());
   }
-  const earnedThisYear = Math.max(0, (monthsThisYear * config.monthlySalary) + earnedThisMonth);
+  const earnedThisYear = Math.max(0, (monthsThisYear * config.monthlySalary) + earnedThisMonth - ((unpaidLeavesThisYear - unpaidLeavesThisMonth) * dailyDeduction));
   const displayEarned = conversionTimeframe === 'today' ? earnedToday : conversionTimeframe === 'month' ? earnedThisMonth : earnedThisYear;
 
   const daysThisWeek = localTime.getDay() === 0 ? 7 : localTime.getDay();
@@ -809,9 +1464,25 @@ export default function App() {
   }
   const daysToPayday = localTime.getDate() === config.payday ? 0 : Math.ceil((paydayObj.getTime() - localTime.getTime()) / (1000 * 3600 * 24));
   
-  const weekendObj = new Date(localTime);
-  const daysToWeekend = 6 - localTime.getDay();
-  weekendObj.setDate(localTime.getDate() + daysToWeekend);
+  let daysToNextRestDay = 1;
+  let nextRestDayObj = new Date(localTime);
+  nextRestDayObj.setDate(localTime.getDate() + 1);
+  for (let i = 0; i < 30; i++) {
+     const dayDay = nextRestDayObj.getDay();
+     const isWknd = (config.restDays === 2 && (dayDay === 0 || dayDay === 6)) || (config.restDays === 1 && dayDay === 0);
+     const isMakeUp = isDateCustomWorkday(nextRestDayObj, config.holidayRegion);
+     const isHol = isDateCustomHoliday(nextRestDayObj, config.holidayRegion);
+     const nextMemoStr = `${nextRestDayObj.getFullYear()}-${(nextRestDayObj.getMonth() + 1).toString().padStart(2, '0')}-${nextRestDayObj.getDate().toString().padStart(2, '0')}`;
+     const nextMemos = (memos || {})[nextMemoStr] || [];
+     const isNextPaid = nextMemos.some((m: any) => m.type === 'paid_leave');
+     const isNextUnpaid = nextMemos.some((m: any) => m.type === 'unpaid_leave');
+     
+     if (((isWknd || isHol) && !isMakeUp) || isNextPaid || isNextUnpaid) {
+         break;
+     }
+     nextRestDayObj.setDate(nextRestDayObj.getDate() + 1);
+     daysToNextRestDay++;
+  }
   
   const customDateObj = new Date(config.customEventDate);
   const daysToCustom = Math.ceil((customDateObj.getTime() - localTime.getTime()) / (1000 * 3600 * 24));
@@ -819,6 +1490,22 @@ export default function App() {
   const retireDateObj = new Date(config.retirementDate);
   const daysToRetire = Math.ceil((retireDateObj.getTime() - localTime.getTime()) / (1000 * 3600 * 24));
   
+  let isSelectedLeaveDateNaturalRest = false;
+  let selectedLeaveDateLabel = "";
+  if (leaveDateStr) {
+     const tDate = new Date(leaveDateStr);
+     if (!isNaN(tDate.getTime())) {
+        const dDay = tDate.getDay();
+        const isWknd = (config.restDays === 2 && (dDay === 0 || dDay === 6)) || (config.restDays === 1 && dDay === 0);
+        const isHolStr = getCustomHolidayName(tDate, config.holidayRegion);
+        const isHol = isDateCustomHoliday(tDate, config.holidayRegion);
+        const isMakeUp = isDateCustomWorkday(tDate, config.holidayRegion);
+        isSelectedLeaveDateNaturalRest = (isWknd || isHol) && !isMakeUp;
+        if (isSelectedLeaveDateNaturalRest) {
+           selectedLeaveDateLabel = isHolStr ? `${isHolStr}假期，无需请假` : `周末休息日，无需请假`;
+        }
+     }
+  }
 
   return (
     <div className="w-full min-h-[100dvh] md:max-w-4xl lg:max-w-6xl xl:max-w-[1400px] mx-auto bg-app text-primary font-sans overflow-x-hidden pb-24 md:pb-0 relative flex flex-col transition-colors duration-300 md:shadow-2xl md:my-4 md:rounded-3xl border-x md:border-y border-app duration-500">
@@ -863,6 +1550,11 @@ export default function App() {
                   </div>
                 </div>
                 <div className="w-[1px] h-6 md:h-7 bg-app block mx-0.5 md:mx-1 shrink-0"></div>
+                <button onClick={drawFortune} className="w-7 h-7 md:w-8 md:h-8 bg-card rounded-xl border border-app shadow-inner text-primary flex items-center justify-center transition-all hover:scale-105 active:scale-95 relative group shrink-0">
+                   <div className="absolute inset-0 bg-brand/5 group-hover:bg-brand/10 transition-colors rounded-xl"></div>
+                   <span className="text-sm md:text-base relative z-10 group-hover:scale-110 transition-transform">🥠</span>
+                   {!dailyFortune && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-card animate-pulse"></span>}
+                </button>
                 <button onClick={() => setIsLightMode(!isLightMode)} className="w-7 h-7 md:w-8 md:h-8 bg-card rounded-xl border border-app shadow-inner text-primary flex items-center justify-center transition-all hover:scale-105 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-brand shrink-0">
                    {isLightMode ? (
                      <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500 group-hover:rotate-45 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -995,6 +1687,7 @@ export default function App() {
             </div>
           </div>
 
+
           {/* 2. WORK STATUS & REAL-TIME INCOME */}
           <div className="px-4 md:px-8 py-2 flex flex-col gap-3 md:gap-5 max-w-5xl mx-auto w-full">
              {/* Top Row: Clock & Punch Out vs Current Income (Side by side) */}
@@ -1028,16 +1721,20 @@ export default function App() {
                        </defs>
                      </svg>
                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <div className="text-3xl filter drop-shadow-md relative transform hover:scale-110 transition-transform duration-300">
-                           🐮
-                           <div className="text-lg absolute -bottom-1 -right-2">💻</div>
-                        </div>
+                        <NiumaAvatar 
+                           activeTheme={config.avatarTheme || 'default'}
+                           workSeconds={workSecondsToday}
+                           slackSeconds={slackSecondsToday}
+                           overtimeSeconds={overtimeSecondsToday}
+                           nowSecs={nowSecs}
+                           endSecs={endSecs}
+                        />
                      </div>
                   </div>
 
                   <div className="text-center z-10 w-full mb-3">
                      <div className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1 inline-block ${isRestDay ? 'text-primary bg-blue-500/10' : nowSecs < startSecs ? 'text-secondary bg-secondary/10' : nowSecs > endSecs ? 'text-brand bg-brand/10' : isLunchBreak ? 'text-orange-500 bg-orange-500/10' : 'text-primary bg-primary/10'}`}>
-                        {isRestDay ? '周末休息 ✨' : nowSecs < startSecs ? '还没上班' : nowSecs > endSecs ? '已经下班' : isLunchBreak ? '午休干饭 🍚' : '牛马进行中 ⚡️'}
+                        {isRestDay ? `${restTypeLabel} ✨` : nowSecs < startSecs ? '还没上班' : nowSecs > endSecs ? '已经下班' : isLunchBreak ? '午休干饭 🍚' : '牛马进行中 ⚡️'}
                      </div>
                      <div className="text-[18px] font-mono font-bold tracking-tight text-primary/90">
                         {pad0(Math.floor(workSecondsToday / 3600))}:
@@ -1065,7 +1762,7 @@ export default function App() {
 
                   <div className="w-full py-2 rounded-xl flex flex-col items-center justify-center font-black uppercase tracking-tighter bg-card border-none">
                     <span className={`text-xs ${isRestDay ? 'text-primary' : nowSecs < startSecs ? 'text-secondary' : nowSecs > endSecs ? 'text-brand' : isLunchBreak ? 'text-orange-500' : 'text-primary'}`}>
-                      {isRestDay ? '周末愉快 🏖️' : nowSecs < startSecs ? '等待打工' : nowSecs > endSecs ? '下班啦 ✨' : isLunchBreak ? '干饭啦 🍚' : '正在牛马 ⚡️'}
+                      {isRestDay ? `${restTypeLabel}愉快 🏖️` : nowSecs < startSecs ? '等待打工' : nowSecs > endSecs ? '下班啦 ✨' : isLunchBreak ? '干饭啦 🍚' : '正在牛马 ⚡️'}
                     </span>
                   </div>
                </div>
@@ -1184,10 +1881,10 @@ export default function App() {
                    color="green"
                 />
                 <CountdownCard 
-                   title="距离休息日"
-                   time={`${daysToWeekend} 天`}
-                   desc="周末休息"
-                   progress={100 - (daysToWeekend / 7) * 100}
+                   title={isRestDay ? "距离下个休息日" : "距离休息日"}
+                   time={`${daysToNextRestDay} 天`}
+                   desc="盼望好日子"
+                   progress={100 - (daysToNextRestDay / 7) * 100}
                    icon={<CalendarIcon size={16} />}
                    color="yellow"
                 />
@@ -1223,6 +1920,45 @@ export default function App() {
                    color="red"
                 />
              </div>
+          </div>
+
+          {/* Quick Leave Actions */}
+          <div className="px-4 md:px-8 py-2 max-w-5xl mx-auto w-full">
+            <div className="bg-card-inner rounded-2xl border border-app shadow-sm p-4">
+              <div className="flex justify-between items-center mb-4">
+                 <span className="text-xs md:text-sm font-bold text-primary flex items-center gap-1.5"><span className="text-sm">✈️</span> 请假操作板</span>
+                 <input 
+                   type="date" 
+                   value={leaveDateStr}
+                   onChange={(e) => setLeaveDateStr(e.target.value)} 
+                   className="text-[10px] md:text-xs bg-card border border-app rounded text-secondary px-2 py-1 outline-none"
+                 />
+              </div>
+              <div className="flex gap-3 w-full">
+                {isSelectedLeaveDateNaturalRest ? (
+                   <div className="w-full text-center py-4 bg-primary/5 rounded-xl text-primary/80 text-xs tracking-wider font-medium">
+                       所选日期是{selectedLeaveDateLabel} 🎉
+                   </div>
+                ) : (
+                  <>
+                     <button onClick={() => toggleLeaveType('paid_leave')} className={`flex-1 flex max-w-sm flex-col items-center justify-center gap-1 py-3 rounded-xl border transition-all shadow-sm ${((memos || {})[leaveDateStr] || []).some((m: any) => m.type === 'paid_leave') ? 'bg-blue-500/10 border-blue-500/40 text-blue-500 font-bold' : 'bg-card border-app text-secondary hover:bg-card-inner hover:text-primary'}`}>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xl">🌟</span>
+                          {((memos || {})[leaveDateStr] || []).some((m: any) => m.type === 'paid_leave') && <span className="text-[10px] text-blue-500">✅</span>}
+                        </div>
+                        <span className="text-[11px] md:text-xs tracking-wider mt-1">带薪假</span>
+                     </button>
+                     <button onClick={() => toggleLeaveType('unpaid_leave')} className={`flex-1 flex max-w-sm flex-col items-center justify-center gap-1 py-3 rounded-xl border transition-all shadow-sm ${((memos || {})[leaveDateStr] || []).some((m: any) => m.type === 'unpaid_leave') ? 'bg-orange-500/10 border-orange-500/40 text-orange-500 font-bold' : 'bg-card border-app text-secondary hover:bg-card-inner hover:text-primary'}`}>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xl">🍂</span>
+                          {((memos || {})[leaveDateStr] || []).some((m: any) => m.type === 'unpaid_leave') && <span className="text-[10px] text-orange-500">✅</span>}
+                        </div>
+                        <span className="text-[11px] md:text-xs tracking-wider mt-1">无薪假</span>
+                     </button>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* 5. SLACKING & OVERTIME COST */}
@@ -1493,6 +2229,19 @@ export default function App() {
                       onChange={e => setConfig({...config, exchangeRateUsd: e.target.value === '' ? 0 : Number(e.target.value)})}
                     />
                  </div>
+              </div>
+              <div>
+                 <label className="text-xs text-secondary mb-1.5 block">牛马个性化形象</label>
+                 <select 
+                   className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors"
+                   value={config.avatarTheme || 'default'}
+                   onChange={e => setConfig({...config, avatarTheme: e.target.value})}
+                 >
+                   <option value="default">默认牛马 🐮</option>
+                   <option value="cyberpunk">赛博朋克 🤖</option>
+                   <option value="retro">复古像素 👾</option>
+                   <option value="classic">经典马儿 🐴</option>
+                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div>
@@ -1804,14 +2553,14 @@ export default function App() {
               <p>Architect & Author</p>
               <p className="font-semibold text-primary">Barry</p>
               <a href="mailto:barry.bai@hotwavehk.com" className="hover:text-brand transition-colors">barry.bai@hotwavehk.com</a>
-              <p className="mt-2 text-[10px] tracking-widest uppercase">Version 1.0.10</p>
+              <p className="mt-2 text-[10px] tracking-widest uppercase">Version 1.0.16</p>
            </div>
         </div>
       )}
 
       
       {activeTab === 'pomodoro' && (
-        <div className="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 pt-6 pb-24 bg-card-inner md:rounded-3xl max-w-4xl mx-auto w-full">
+        <div className={`flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 pt-6 pb-24 md:rounded-3xl max-w-4xl mx-auto w-full transition-colors duration-1000 bg-card-inner`}>
            <div className="flex flex-col items-center justify-center min-h-full py-10">
              
              <div className="mb-8 w-full max-w-sm text-center">
@@ -1822,39 +2571,12 @@ export default function App() {
              <div className="w-full max-w-sm bg-card border border-app rounded-[32px] p-6 shadow-2xl relative flex flex-col items-center shrink-0">
                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full pointer-events-none" />
                  
-                 <div className="relative w-48 h-48 mb-6 flex items-end justify-center shrink-0">
-                     <div className="relative w-3 h-32 flex flex-col justify-end items-center mb-8">
-                       {/* The stick that burns down */}
-                       <div 
-                         className="w-1.5 bg-gradient-to-t from-[#8E614A] to-[#C39A7F] rounded-t-full relative transition-[height] duration-1000 ease-linear shadow-[inset_0_0_2px_rgba(0,0,0,0.5)]"
-                         style={{ height: `${Math.max(2, (pomodoroTimeLeft / (pomodoroLength * 60)) * 100)}%` }}
-                       >
-                          {/* Glowing tip & Smoke */}
-                          {(isPomodoroActive || pomodoroTimeLeft !== pomodoroLength * 60) && pomodoroTimeLeft > 0 && (
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gradient-to-r from-red-500 to-orange-400 rounded-full shadow-[0_0_8px_rgba(255,165,0,0.8)] animate-pulse">
-                              {/* Smoke effect */}
-                              {isPomodoroActive && (
-                                <motion.div 
-                                  initial={{ opacity: 0, y: 0, scale: 0.8 }}
-                                  animate={{ opacity: [0, 0.5, 0], y: -30, scale: 1.5, x: [0, -10, 10, -5] }}
-                                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                  className="absolute -top-4 left-1/2 -translate-x-1/2 w-4 h-8 bg-gray-300/30 blur-md rounded-full pointer-events-none"
-                                />
-                              )}
-                            </div>
-                          )}
-                       </div>
-                       {/* Stick holder */}
-                       <div className="w-12 h-3 bg-[#4A4A4A] rounded-b-lg border-t-2 border-[#666] shadow-lg shrink-0"></div>
-                     </div>
-
-                     <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                       <div className="text-7xl font-mono font-bold">{pad0(Math.floor(pomodoroTimeLeft / 60))}:{pad0(Math.floor(pomodoroTimeLeft % 60))}</div>
-                     </div>
-                     <div className="absolute bottom-0 text-3xl font-mono font-bold text-primary tabular-nums tracking-tighter filter drop-shadow-md">
-                       {pad0(Math.floor(pomodoroTimeLeft / 60))}:{pad0(Math.floor(pomodoroTimeLeft % 60))}
-                     </div>
-                 </div>
+                 <FocusVisualizer 
+                   containerId={pomodoroContainer} 
+                   timeLeft={pomodoroTimeLeft}
+                   lengthMins={pomodoroLength}
+                   isActive={isPomodoroActive}
+                 />
 
                  {/* task input */}
                  <div className="w-full mb-6 relative z-10">
@@ -1908,17 +2630,61 @@ export default function App() {
                  </div>
              </div>
 
-             {/* Presets */}
-             <div className="mt-8 flex gap-3 text-xs">
-                <button onClick={() => handlePomodoroLengthChange(25)} className={`px-4 py-2 rounded-full border ${pomodoroLength === 25 ? 'bg-brand/10 border-brand/30 text-brand font-bold' : 'bg-card border-app text-secondary hover:text-primary'}`}>
-                  25分钟
-                </button>
-                <button onClick={() => handlePomodoroLengthChange(50)} className={`px-4 py-2 rounded-full border ${pomodoroLength === 50 ? 'bg-brand/10 border-brand/30 text-brand font-bold' : 'bg-card border-app text-secondary hover:text-primary'}`}>
-                  50分钟
-                </button>
-                <button onClick={() => handlePomodoroLengthChange(90)} className={`px-4 py-2 rounded-full border ${pomodoroLength === 90 ? 'bg-brand/10 border-brand/30 text-brand font-bold' : 'bg-card border-app text-secondary hover:text-primary'}`}>
-                  90分钟
-                </button>
+             <div className="w-full max-w-sm mt-8 space-y-6">
+                 <div>
+                   <h3 className="text-sm font-bold text-primary mb-3">燃烧时间的容器</h3>
+                   <div className="grid grid-cols-5 gap-2">
+                     {FOCUS_CONTAINERS.map(c => (
+                        <button 
+                          key={c.id}
+                          onClick={() => { setPomodoroContainer(c.id); handlePomodoroLengthChange(c.defaultTime); }}
+                          className={`flex flex-col items-center justify-center p-2 rounded-xl border ${pomodoroContainer === c.id ? 'bg-brand/10 border-brand/50 text-brand' : 'bg-card border-app text-secondary hover:text-primary'} transition-colors`}
+                          title={c.name}
+                        >
+                           <span className="text-2xl mb-1">{c.emoji}</span>
+                           <span className="text-[10px] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">{c.name}</span>
+                        </button>
+                     ))}
+                   </div>
+                 </div>
+
+                 <div>
+                   <h3 className="text-sm font-bold text-primary mb-3 flex items-center justify-between">
+                     <span>环境白噪音</span>
+                     <span className="text-[10px] text-tertiary">可多选</span>
+                   </h3>
+                   <div className="grid grid-cols-5 gap-2">
+                     {[
+                       { id: 'rain', name: '雨声', emoji: '🌧️' },
+                       { id: 'fire', name: '篝火', emoji: '🔥' },
+                       { id: 'train', name: '火车', emoji: '🚂' },
+                       { id: 'ocean', name: '海浪', emoji: '🌊' },
+                       { id: 'birds', name: '鸟鸣', emoji: '🐦' },
+                       { id: 'wind', name: '清风', emoji: '🌬️' },
+                       { id: 'stream', name: '溪流', emoji: '🏞️' },
+                       { id: 'keyboard', name: '键盘', emoji: '⌨️' },
+                       { id: 'clock', name: '钟表', emoji: '🕰️' }
+                     ].map(bgm => {
+                        const isActiveBg = activeBgms.includes(bgm.id);
+                        return (
+                          <button 
+                            key={bgm.id}
+                            onClick={() => {
+                               if (isActiveBg) {
+                                  setActiveBgms(activeBgms.filter(x => x !== bgm.id));
+                               } else {
+                                  setActiveBgms([...activeBgms, bgm.id]);
+                               }
+                            }}
+                            className={`flex flex-col items-center justify-center py-3 rounded-xl border ${isActiveBg ? 'bg-brand/10 border-brand/50 text-brand shadow-[0_0_10px_rgba(0,255,65,0.2)]' : 'bg-card border-app text-secondary hover:text-primary'} transition-all`}
+                          >
+                             <span className="text-xl mb-1">{bgm.emoji}</span>
+                             <span className="text-[10px]">{bgm.name}</span>
+                          </button>
+                        );
+                     })}
+                   </div>
+                 </div>
              </div>
 
              {completedPomodoros > 0 && (
@@ -1929,13 +2695,52 @@ export default function App() {
            </div>
         </div>
       )}
-{activeTab === 'calendar' && (
+{activeTab === 'calendar' && (() => {
+        let calWorkDays = 0;
+        let calRestDays = 0;
+        const calDaysInMonth = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0).getDate();
+        for (let date = 1; date <= calDaysInMonth; date++) {
+          const d = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), date);
+          const dayOfWeek = d.getDay();
+          const isStandardWeekend = config.restDays === 2 ? (dayOfWeek === 0 || dayOfWeek === 6) : (dayOfWeek === 0);
+          const isCustomHoliday = isDateCustomHoliday(d, config.holidayRegion);
+          const isCustomWorkday = isDateCustomWorkday(d, config.holidayRegion);
+
+          let isRest = (isStandardWeekend || isCustomHoliday) && !isCustomWorkday;
+          
+          const memoKey = `${calendarDate.getFullYear()}-${(calendarDate.getMonth() + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`;
+          const dayMemos = (memos || {})[memoKey] || [];
+          const isPaidLeave = dayMemos.some((m: any) => m.type === 'paid_leave');
+          const isUnpaidLeave = dayMemos.some((m: any) => m.type === 'unpaid_leave');
+          
+          if (isPaidLeave || isUnpaidLeave) {
+             isRest = true;
+          }
+
+          if (isRest) {
+             calRestDays++;
+          } else {
+             calWorkDays++;
+          }
+        }
+        
+        const getRegionName = (code: string) => {
+          switch (code) {
+            case 'CN': return '中国大陆';
+            case 'HK': return '中国香港';
+            case 'TH': return '泰国';
+            case 'VN': return '越南';
+            default: return '本地区';
+          }
+        };
+
+        return (
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 py-8 space-y-4 pb-24 absolute inset-0 top-0 bg-card-inner z-40 md:rounded-3xl max-w-4xl mx-auto w-full">
            <div className="flex items-center justify-between mt-2 mb-2">
               <button onClick={() => setActiveTab('home')} className="p-2 bg-card rounded-full border border-app text-primary">
                  <ChevronLeft size={18} />
               </button>
-              <span className="font-bold text-primary">牛马工作日历</span>
+              <span className="font-bold text-primary">{getRegionName(config.holidayRegion)}工作日历</span>
               <div className="flex gap-2">
                  <button onClick={() => setCalendarDate(new Date())} className="px-3 py-1 bg-card rounded-full border border-app text-xs text-primary">
                     今
@@ -1950,7 +2755,10 @@ export default function App() {
               ><ChevronLeft size={16} /></button>
               <div className="text-center">
                  <div className="text-lg font-bold text-primary">{calendarDate.getFullYear()}年{calendarDate.getMonth() + 1}月</div>
-                 <div className="text-[10px] text-tertiary">(本月基础薪资 {sym}{hide(formatMoney(config.monthlySalary / ex))})</div>
+                 <div className="text-[10px] text-tertiary">
+                   工作日: <span className="font-bold text-primary">{calWorkDays}</span>天 | 
+                   休息日: <span className="font-bold text-primary">{calRestDays}</span>天
+                 </div>
               </div>
               <button 
                  onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} 
@@ -2026,13 +2834,261 @@ export default function App() {
                  提示：点击日期记录备忘事项，所有数据均保留在您本地。
               </div>
               <div className="text-center pt-8 pb-4 opacity-30">
-                 <p className="text-[10px] font-mono tracking-widest text-tertiary uppercase">Version 1.0.10</p>
+                 <p className="text-[10px] font-mono tracking-widest text-tertiary uppercase">Version 1.0.16</p>
               </div>
             </div>
          </div>
+        );
+      })()}
+
+      {activeTab === 'visa' && (
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 py-8 space-y-6 pb-24 absolute inset-0 top-0 bg-card-inner z-40 md:rounded-3xl max-w-4xl mx-auto w-full">
+           <div className="flex items-center justify-between mt-2 mb-6">
+              <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
+                 <Plane size={24} className="text-brand" /> 跨国签证管家
+              </h2>
+              
+              <button 
+                onClick={() => setShowFinishedVisa(!showFinishedVisa)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${
+                  showFinishedVisa 
+                  ? 'bg-brand/10 border-brand/20 text-brand shadow-[0_0_10px_rgba(34,197,94,0.1)]' 
+                  : 'bg-card border-app text-tertiary'
+                }`}
+              >
+                {showFinishedVisa ? '显示全部行程' : '仅看进行中'}
+                <div className={`w-1.5 h-1.5 rounded-full ${showFinishedVisa ? 'bg-brand animate-pulse' : 'bg-tertiary'}`} />
+              </button>
+           </div>
+           
+           <div className="bg-card w-full border border-app rounded-[24px] p-5 shadow-sm relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full" />
+             <form className="relative z-10 flex flex-col gap-4" onSubmit={(e) => {
+               e.preventDefault();
+               const fd = new FormData(e.currentTarget);
+               const entryDate = fd.get('entryDate') as string;
+               const exitDate = fd.get('exitDate') as string;
+               const country = fd.get('country') as string || 'US';
+               const validityDays = parseInt(fd.get('validityDays') as string) || 30;
+               const entryAirport = fd.get('entryAirport') as string;
+               const exitAirport = fd.get('exitAirport') as string;
+               if (!entryDate) return alert('请输入入境日期');
+               setVisaEntries([{
+                 id: Date.now().toString(),
+                 entryDate,
+                 exitDate,
+                 country,
+                 validityDays,
+                 entryAirport,
+                 exitAirport
+               }, ...visaEntries]);
+               e.currentTarget.reset();
+             }}>
+               <div className="grid grid-cols-2 gap-3">
+                 <div>
+                   <label className="text-xs text-secondary mb-1.5 block">入境国家/地区</label>
+                   <input name="country" type="text" placeholder="例如：泰国" required className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
+                 </div>
+                 <div>
+                   <label className="text-xs text-secondary mb-1.5 block">签证有效期 (天)</label>
+                   <input name="validityDays" type="number" defaultValue="30" required className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
+                 </div>
+               </div>
+               <div className="grid grid-cols-2 gap-3 border-t border-app pt-3">
+                 <div>
+                   <label className="text-xs text-secondary mb-1.5 block flex items-center gap-1"><span className="text-[10px]">🛬</span> 入境日期</label>
+                   <input name="entryDate" type="date" required className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
+                 </div>
+                 <div>
+                   <label className="text-xs text-secondary mb-1.5 block">入境机场/口岸</label>
+                   <input name="entryAirport" type="text" placeholder="如：BKK" className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
+                 </div>
+               </div>
+               <div className="grid grid-cols-2 gap-3 border-t border-app pt-3">
+                 <div>
+                   <label className="text-xs text-secondary mb-1.5 block flex items-center gap-1"><span className="text-[10px]">🛫</span> 出境日期 (选填)</label>
+                   <input name="exitDate" type="date" className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
+                 </div>
+                 <div>
+                   <label className="text-xs text-secondary mb-1.5 block">出境机场/口岸 (选填)</label>
+                   <input name="exitAirport" type="text" placeholder="如：NRT" className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors" />
+                 </div>
+               </div>
+               <button type="submit" className="w-full py-3 h-[48px] bg-brand text-app font-bold rounded-xl mt-2 hover:brightness-110 transition-all shadow-md">
+                 登记新行程 (出境可选填)
+               </button>
+               <p className="text-[10px] text-tertiary text-center mt-1">如果中途离境再次入境，可以直接添加一条新行程。</p>
+             </form>
+           </div>
+
+           <div className="space-y-4">
+             {visaEntries
+               .filter(entry => showFinishedVisa || !entry.exitDate)
+               .map(entry => {
+               const entryTime = new Date(entry.entryDate).getTime();
+               const exitTime = entry.exitDate ? new Date(entry.exitDate).getTime() : Date.now();
+               const expireTime = entryTime + entry.validityDays * 24 * 60 * 60 * 1000;
+               
+               const totalStayed = Math.floor((exitTime - entryTime) / (1000 * 60 * 60 * 24)) + 1;
+               const remainingDays = Math.ceil((expireTime - Date.now()) / (1000 * 60 * 60 * 24));
+               const isOverdue = remainingDays < 0 && !entry.exitDate;
+               
+               let tag = null;
+               if (entry.exitDate) {
+                 tag = <span className="bg-app px-2 py-0.5 rounded text-secondary border border-app-strong text-[10px]">已结束</span>;
+               } else if (isOverdue) {
+                 tag = <span className="bg-red-500/10 px-2 py-0.5 rounded text-red-500 border border-red-500/30 text-[10px] font-bold animate-pulse">已逾期 {Math.abs(remainingDays)} 天！</span>;
+               } else if (remainingDays <= 3) {
+                 tag = <span className="bg-orange-500/10 px-2 py-0.5 rounded text-orange-500 border border-orange-500/30 text-[10px] font-bold">⚠️ 剩 {remainingDays} 天续签</span>;
+               } else {
+                 tag = <span className="bg-brand/10 px-2 py-0.5 rounded text-brand border border-brand/30 text-[10px] font-bold italic">进行中</span>;
+               }
+
+               return (
+                 <div key={entry.id} className={`bg-card w-full border border-app border-l-[4px] rounded-2xl p-4 shadow-sm relative group overflow-hidden transition-all ${entry.exitDate ? 'border-l-tertiary/30' : 'border-l-brand'}`}>
+                   <div className="flex justify-between items-start mb-3">
+                     <div className="flex flex-col">
+                       <span className="text-sm font-bold text-primary flex items-center gap-1.5">
+                         {entry.country} 
+                         {tag}
+                       </span>
+                       <div className="text-[10px] text-tertiary mt-2 flex flex-col gap-1.5 font-medium">
+                         <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 flex items-center justify-center bg-brand/10 text-brand rounded-full text-[7px]">入</span>
+                            <span className="opacity-80">{entry.entryDate} {entry.entryAirport && `· ${entry.entryAirport}`}</span>
+                         </div>
+                         <div className="flex items-center gap-2">
+                            <span className={`w-3 h-3 flex items-center justify-center rounded-full text-[7px] ${entry.exitDate ? 'bg-tertiary/10 text-tertiary' : 'bg-blue-500/10 text-blue-500 animate-pulse'}`}>出</span>
+                            <span className={entry.exitDate ? "opacity-80" : "text-blue-500"}>
+                              {entry.exitDate ? `${entry.exitDate} ${entry.exitAirport ? `· ${entry.exitAirport}` : ''}` : '尚未出境'}
+                            </span>
+                         </div>
+                       </div>
+                     </div>
+                     <button onClick={() => setVisaEntries(visaEntries.filter(x => x.id !== entry.id))} className="text-tertiary hover:text-red-500 transition-colors p-1.5 bg-card-inner rounded-lg border border-app opacity-40 group-hover:opacity-100"><Trash2 size={14}/></button>
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-3 mt-4">
+                     <div className="bg-card-inner/50 rounded-2xl p-3 border border-app flex flex-col justify-center relative">
+                       <span className="text-[9px] text-tertiary mb-1 uppercase tracking-wider font-bold">{entry.exitDate ? '历时' : '已停留'}</span>
+                       <div className="flex items-baseline gap-1">
+                         <span className="text-xl font-mono font-bold text-primary">{totalStayed}</span>
+                         <span className="text-[10px] text-tertiary">Days</span>
+                       </div>
+                     </div>
+                     <div className="bg-card-inner/50 rounded-2xl p-3 border border-app flex flex-col justify-center relative">
+                       <span className="text-[9px] text-tertiary mb-1 uppercase tracking-wider font-bold">{entry.exitDate ? '期限' : '剩余'}</span>
+                       <div className="flex items-baseline gap-1">
+                         <span className={`text-xl font-mono font-bold ${!entry.exitDate && remainingDays <= 7 ? 'text-orange-500' : 'text-brand'}`}>
+                           {entry.exitDate ? entry.validityDays : Math.max(0, remainingDays)}
+                         </span>
+                         <span className="text-[10px] text-tertiary">Days</span>
+                       </div>
+                     </div>
+                   </div>
+
+                   {!entry.exitDate && (
+                     <div className="mt-4 pt-4 border-t border-app relative z-10">
+                       <label className="text-[10px] font-bold text-secondary mb-2 block uppercase tracking-tighter">快速记录出境</label>
+                       <div className="flex gap-2">
+                         <input type="date" 
+                           className="flex-1 appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[40px] block box-border text-primary focus:border-brand focus:outline-none text-xs transition-shadow focus:shadow-[0_0_10px_rgba(34,197,94,0.1)]" 
+                           onChange={(e) => {
+                             if (e.target.value) {
+                               const updated = visaEntries.map(x => x.id === entry.id ? { ...x, exitDate: e.target.value } : x);
+                               setVisaEntries(updated);
+                             }
+                           }}
+                         />
+                         <input type="text"
+                           placeholder="口岸"
+                           className="w-[80px] appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[40px] block box-border text-primary focus:border-brand focus:outline-none text-xs transition-shadow focus:shadow-[0_0_10px_rgba(34,197,94,0.1)]"
+                           value={entry.exitAirport}
+                           onChange={(e) => {
+                               const updated = visaEntries.map(x => x.id === entry.id ? { ...x, exitAirport: e.target.value } : x);
+                               setVisaEntries(updated);
+                           }}
+                         />
+                       </div>
+                     </div>
+                   )}
+                 </div>
+               );
+             })}
+             
+             {visaEntries.filter(entry => showFinishedVisa || !entry.exitDate).length === 0 && (
+               <div className="py-16 bg-card border border-app border-dashed rounded-3xl text-center text-secondary text-sm flex flex-col items-center gap-3">
+                 <div className="w-16 h-16 rounded-full bg-card-inner border border-app flex items-center justify-center opacity-30 mt-2">
+                   <Plane size={32} />
+                 </div>
+                 <div className="flex flex-col gap-1">
+                   <span className="font-bold opacity-80">暂无行程记录</span>
+                   <span className="text-[10px] opacity-40 uppercase tracking-widest tracking-tighter">Nothing to display</span>
+                 </div>
+                 {(!showFinishedVisa && visaEntries.length > 0) && (
+                    <button 
+                      onClick={() => setShowFinishedVisa(true)}
+                      className="mt-2 text-brand text-xs font-bold underline underline-offset-4"
+                    >
+                      查看已结束的行程 ({visaEntries.length})
+                    </button>
+                 )}
+               </div>
+             )}
+             
+             {visaEntries.length > 0 && (
+               <div className="mt-8 pt-8 border-t border-app">
+                 <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xs font-bold text-secondary uppercase tracking-widest">出境行程统计</h3>
+                    <span className="text-[10px] font-mono text-tertiary">TOTAL STATS</span>
+                 </div>
+                 <div className="bg-card-inner rounded-[24px] p-5 border border-brand/20 shadow-inner flex flex-col group hover:border-brand/40 transition-colors">
+                   <div className="flex justify-between items-center mb-4 pb-4 border-b border-app/50 border-dashed">
+                     <div className="flex flex-col">
+                       <span className="text-[10px] font-bold text-secondary mb-1 uppercase tracking-tighter">今年累计停留时长</span>
+                       <div className="flex items-baseline gap-1.5">
+                         <span className="text-3xl font-mono font-bold text-brand group-hover:scale-105 transition-transform origin-left">
+                           {visaEntries.filter(x => x.entryDate.startsWith(new Date().getFullYear().toString())).reduce((acc, entry) => {
+                             const entryTime = new Date(entry.entryDate).getTime();
+                             const exitTime = entry.exitDate ? new Date(entry.exitDate).getTime() : Date.now();
+                             return acc + Math.floor((exitTime - entryTime) / (1000 * 60 * 60 * 24)) + 1;
+                           }, 0)}
+                         </span>
+                         <span className="text-xs font-sans font-bold text-secondary">DAYS</span>
+                       </div>
+                     </div>
+                     <div className="w-14 h-14 rounded-2xl bg-brand/10 flex items-center justify-center text-brand shadow-inner rotate-3 group-hover:rotate-0 transition-transform">
+                       <Globe size={28} />
+                     </div>
+                   </div>
+
+                   <div className="flex flex-col gap-3">
+                     <span className="text-[10px] font-bold text-secondary uppercase tracking-tighter mb-1">各国家/地区总逗留时间</span>
+                     {Object.entries(
+                        visaEntries.reduce((acc, entry) => {
+                          const entryTime = new Date(entry.entryDate).getTime();
+                          const exitTime = entry.exitDate ? new Date(entry.exitDate).getTime() : Date.now();
+                          const days = Math.floor((exitTime - entryTime) / (1000 * 60 * 60 * 24)) + 1;
+                          acc[entry.country] = (acc[entry.country] || 0) + days;
+                          return acc;
+                        }, {} as Record<string, number>)
+                     ).sort((a, b) => b[1] - a[1]).map(([country, days]) => (
+                        <div key={country} className="flex items-center justify-between">
+                           <span className="text-sm font-bold text-primary flex items-center gap-2">
+                             <div className="w-1.5 h-1.5 rounded-full bg-brand" /> {country}
+                           </span>
+                           <span className="text-xs font-mono text-tertiary">累计 <span className="text-brand font-bold">{days}</span> 天</span>
+                        </div>
+                     ))}
+                   </div>
+                 </div>
+               </div>
+             )}
+           </div>
+        </div>
       )}
 
-      {activeTab !== 'home' && activeTab !== 'pomodoro' && activeTab !== 'profile' && activeTab !== 'data' && activeTab !== 'calendar' && (
+      {activeTab !== 'home' && activeTab !== 'pomodoro' && activeTab !== 'profile' && activeTab !== 'data' && activeTab !== 'calendar' && activeTab !== 'visa' && (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-card-inner z-40 absolute inset-0 top-0">
            <h2 className="text-xl font-bold mb-2">🚧 正在施工</h2>
            <p className="text-sm">功能正在开发中...</p>
@@ -2084,10 +3140,10 @@ export default function App() {
                             color="green"
                          />
                          <CountdownCard 
-                            title="距离休息日"
-                            time={`${daysToWeekend} 天`}
-                            desc="周末休息"
-                            progress={100 - (daysToWeekend / 7) * 100}
+                            title={isRestDay ? "距离下个休息日" : "距离休息日"}
+                            time={`${daysToNextRestDay} 天`}
+                            desc="盼望好日子"
+                            progress={100 - (daysToNextRestDay / 7) * 100}
                             icon={<CalendarIcon size={16} />}
                             color="yellow"
                          />
@@ -2129,10 +3185,11 @@ export default function App() {
          )}
       </AnimatePresence>
 
-        <div className="fixed bottom-0 left-0 right-0 w-full md:max-w-4xl lg:max-w-6xl xl:max-w-[1400px] mx-auto bg-card-inner/90 backdrop-blur-lg border-t md:border border-app py-2 md:py-4 px-4 md:px-16 flex justify-between items-center z-50 md:rounded-b-3xl md:rounded-t-none md:bottom-4 xl:rounded-3xl shadow-2xl md:mb-4 xl:mb-0 transition-all duration-300">
+        <div className="fixed bottom-0 left-0 right-0 w-full md:max-w-4xl lg:max-w-6xl xl:max-w-[1400px] mx-auto bg-card-inner/90 backdrop-blur-lg border-t md:border border-app py-2 md:py-4 px-2 md:px-16 flex justify-between items-center z-50 md:rounded-b-3xl md:rounded-t-none md:bottom-4 xl:rounded-3xl shadow-2xl md:mb-4 xl:mb-0 transition-all duration-300">
          <NavItem icon={<Home size={22} />} label="首页" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-         <NavItem icon={<Timer size={22} />} label="番茄钟" active={activeTab === 'pomodoro'} onClick={() => setActiveTab('pomodoro')} />
+         <NavItem icon={<Timer size={22} />} label="专注" active={activeTab === 'pomodoro'} onClick={() => setActiveTab('pomodoro')} />
          <NavItem icon={<CalendarIcon size={22} />} label="日历" active={activeTab === 'calendar'} onClick={() => { setActiveTab('calendar'); setCalendarDate(new Date()); }} />
+         <NavItem icon={<Globe size={22} />} label="签证" active={activeTab === 'visa'} onClick={() => setActiveTab('visa')} />
          <NavItem icon={<PieChart size={22} />} label="数据" active={activeTab === 'data'} onClick={() => setActiveTab('data')} />
          <NavItem icon={<Settings size={22} />} label="设定" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
       </div>
@@ -2145,7 +3202,7 @@ export default function App() {
           
           <div style={{ position: 'relative', zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '32px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#4CAF50', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#4CAF50', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: '14px', width: '100%', textAlign: 'center' }}>T</span>
               </div>
               <span style={{ fontWeight: 'bold', fontSize: '18px', letterSpacing: '-0.025em' }}>TimeMeter</span>
@@ -2206,6 +3263,49 @@ export default function App() {
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* Fortune Modal */}
+      <AnimatePresence>
+         {fortuneModalOpen && dailyFortune && (
+            <motion.div
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+               className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+               onClick={() => setFortuneModalOpen(false)}
+            >
+               <motion.div
+                 initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                 className="bg-card border border-app p-6 md:p-8 rounded-3xl max-w-sm w-full shadow-2xl flex flex-col items-center text-center relative overflow-hidden"
+                 onClick={e => e.stopPropagation()}
+               >
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 blur-3xl rounded-full"></div>
+                 <h3 className="font-bold text-primary mb-6 text-lg tracking-wider">今日专属运势卡</h3>
+                 
+                 <div className="w-24 h-24 rounded-full bg-card-inner border-2 border-app flex items-center justify-center text-5xl mb-4 shadow-inner">
+                    {dailyFortune.emoji}
+                 </div>
+                 
+                 <div className={`text-2xl font-black mb-2 ${dailyFortune.color}`}>
+                    {dailyFortune.level}
+                 </div>
+                 
+                 <div className="text-sm font-bold text-primary mb-2 px-2">
+                    {dailyFortune.text}
+                 </div>
+                 
+                 <div className="text-secondary text-xs leading-relaxed px-4 opacity-80">
+                    {dailyFortune.detail}
+                 </div>
+                 
+                 <button 
+                   className="w-full mt-8 py-3 bg-card-inner border border-app text-primary font-semibold rounded-xl text-sm hover:bg-app transition-colors"
+                   onClick={() => setFortuneModalOpen(false)}
+                 >
+                   收下运势
+                 </button>
+               </motion.div>
+            </motion.div>
+         )}
       </AnimatePresence>
 
       {/* Toast Notification */}
