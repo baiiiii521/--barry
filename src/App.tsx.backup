@@ -1,4 +1,3 @@
-import { t, setLanguage, getLanguage } from "./i18n";
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getNoiseSynth } from './lib/NoiseSynth';
 import { motion, AnimatePresence } from 'motion/react';
@@ -99,24 +98,24 @@ const pad0 = (num: number) => num.toString().padStart(2, '0');
 
 // Timezones options
 const TIMEZONES = [
-  { label: t('🇨🇳 北京'), value: 'Asia/Shanghai', short: t('北京') },
-  { label: t('🇹🇭 曼谷'), value: 'Asia/Bangkok', short: t('曼谷') },
-  { label: t('🇻🇳 胡志明'), value: 'Asia/Ho_Chi_Minh', short: t('胡志明') },
-  { label: t('🇨🇳 香港'), value: 'Asia/Hong_Kong', short: t('香港') },
-  { label: t('🇯🇵 东京'), value: 'Asia/Tokyo', short: t('东京') },
-  { label: t('🇺🇸 纽约'), value: 'America/New_York', short: t('纽约') },
-  { label: t('🇬🇧 伦敦'), value: 'Europe/London', short: t('伦敦') },
-  { label: t('🇦🇺 悉尼'), value: 'Australia/Sydney', short: t('悉尼') },
-  { label: t('🇫🇷 巴黎'), value: 'Europe/Paris', short: t('巴黎') },
+  { label: '🇨🇳 北京', value: 'Asia/Shanghai', short: '北京' },
+  { label: '🇹🇭 曼谷', value: 'Asia/Bangkok', short: '曼谷' },
+  { label: '🇻🇳 胡志明', value: 'Asia/Ho_Chi_Minh', short: '胡志明' },
+  { label: '🇨🇳 香港', value: 'Asia/Hong_Kong', short: '香港' },
+  { label: '🇯🇵 东京', value: 'Asia/Tokyo', short: '东京' },
+  { label: '🇺🇸 纽约', value: 'America/New_York', short: '纽约' },
+  { label: '🇬🇧 伦敦', value: 'Europe/London', short: '伦敦' },
+  { label: '🇦🇺 悉尼', value: 'Australia/Sydney', short: '悉尼' },
+  { label: '🇫🇷 巴黎', value: 'Europe/Paris', short: '巴黎' },
 ];
 
 const getLocalTzInfo = () => {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai';
     const match = TIMEZONES.find(t => t.value === tz);
-    return { value: tz, label: match ? match.short : (tz.split('/').pop() || t('本地')) };
+    return { value: tz, label: match ? match.short : (tz.split('/').pop() || '本地') };
   } catch (e) {
-    return { value: 'Asia/Shanghai', label: t('北京') };
+    return { value: 'Asia/Shanghai', label: '北京' };
   }
 };
 
@@ -150,37 +149,37 @@ const getWorkDaysInMonth = (year: number, month: number, region: string, restDay
 };
 
 const FORTUNES = [
-  { level: t('大吉'), text: t('今日大吉：摸鱼指数100%'), detail: t('今天老板出差，敞开摸吧！'), emoji: '🎉', color: 'text-green-500' },
-  { level: t('大吉'), text: t('今日大吉：系统崩溃'), detail: t('趁现在，快去喝杯咖啡！'), emoji: '☕', color: 'text-green-500' },
-  { level: t('大吉'), text: t('今日大吉：准点下班'), detail: t('没有任何阻碍，电梯都刚刚好。'), emoji: '🏃', color: 'text-green-500' },
-  { level: t('大吉'), text: t('今日大吉：带薪拉屎'), detail: t('马桶犹如龙椅，舒适度满分。'), emoji: '🚽', color: 'text-green-500' },
-  { level: t('大吉'), text: t('今日大吉：灵感爆棚'), detail: t('10分钟写完代码，剩下7小时50分摸鱼。'), emoji: '💡', color: 'text-green-500' },
-  { level: t('大吉'), text: t('今日大吉：奖金翻倍'), detail: t('虽然是做梦，但梦里真的很爽。'), emoji: '💰', color: 'text-green-500' },
-  { level: t('大吉'), text: t('今日大吉：神仙乙方'), detail: t('今天对接的人意外地好说话。'), emoji: '✨', color: 'text-green-500' },
-  { level: t('小吉'), text: t('今日小吉：无事发生'), detail: t('没有需求就是最好的需求。'), emoji: '😌', color: 'text-yellow-500' },
-  { level: t('小吉'), text: t('今日小吉：会议数量-2'), detail: t('不用去听废话了，但也可能有个甲方找麻烦。'), emoji: '📅', color: 'text-yellow-500' },
-  { level: t('小吉'), text: t('今日小吉：下午茶+1'), detail: t('隔壁部门请客，白嫖快乐。'), emoji: '🍰', color: 'text-yellow-500' },
-  { level: t('小吉'), text: t('今日小吉：Bug秒解'), detail: t('随便改了一行，居然跑通了。'), emoji: '🐛', color: 'text-yellow-500' },
-  { level: t('小吉'), text: t('今日小吉：网速起飞'), detail: t('刷B站一点都不卡。'), emoji: '🚀', color: 'text-yellow-500' },
-  { level: t('小吉'), text: t('今日小吉：老板笑脸'), detail: t('虽然不知为何，但总比板着脸好。'), emoji: '😏', color: 'text-yellow-500' },
-  { level: t('小吉'), text: t('今日小吉：食堂加肉'), detail: t('阿姨今天手没抖。'), emoji: '🍗', color: 'text-yellow-500' },
-  { level: t('小吉'), text: t('今日小吉：不用排队'), detail: t('厕所空旷，空气清新。'), emoji: '✨', color: 'text-yellow-500' },
-  { level: t('平平'), text: t('今日平平：一切照旧'), detail: t('不好不坏，又混过一天。'), emoji: '😐', color: 'text-blue-500' },
-  { level: t('平平'), text: t('今日平平：假装忙碌'), detail: t('敲击键盘的速度与实际产出成反比。'), emoji: '⌨️', color: 'text-blue-500' },
-  { level: t('平平'), text: t('今日平平：准时打卡'), detail: t('晚一分钟算迟到，早一分钟算早退。'), emoji: '⏰', color: 'text-blue-500' },
-  { level: t('平平'), text: t('今日平平：5点准时下班'), detail: t('但有人想叫你加班。'), emoji: '👀', color: 'text-blue-500' },
-  { level: t('平平'), text: t('今日平平：喝水太多'), detail: t('一天去了8次洗手间，间接摸鱼。'), emoji: '💧', color: 'text-blue-500' },
-  { level: t('平平'), text: t('今日平平：忘带耳机'), detail: t('被迫听了一天同事的八卦。'), emoji: '🎧', color: 'text-blue-500' },
-  { level: t('平平'), text: t('今日平平：中午吃撑'), detail: t('下午犯困，生产力-50%。'), emoji: '😴', color: 'text-blue-500' },
-  { level: t('凶'), text: t('今日凶：天降大锅'), detail: t('不是你的Bug，但要你背锅。'), emoji: '🥘', color: 'text-red-400' },
-  { level: t('凶'), text: t('今日凶：产品改需求'), detail: t('刚写完的代码，又要推翻重来。'), emoji: '📝', color: 'text-red-400' },
-  { level: t('凶'), text: t('今日凶：钉钉狂响'), detail: t('响了23次，建议提前关机。'), emoji: '🔔', color: 'text-red-400' },
-  { level: t('凶'), text: t('今日凶：代码冲突'), detail: t('解Git冲突解到怀疑人生。'), emoji: '💥', color: 'text-red-400' },
-  { level: t('凶'), text: t('今日凶：周五发版'), detail: t('发版必崩，周末别想过了。'), emoji: '🔥', color: 'text-red-400' },
-  { level: t('凶'), text: t('今日凶：老板查岗'), detail: t('刚好在切后台，被抓个正着。'), emoji: '😱', color: 'text-red-400' },
-  { level: t('大凶'), text: t('今日大凶：全盘崩溃'), detail: t('没提交代码？节哀顺变。'), emoji: '💀', color: 'text-red-600' },
-  { level: t('大凶'), text: t('今日大凶：连环夺命Call'), detail: t('周报+月报+季报同时催，建议请病假。'), emoji: '📱', color: 'text-red-600' },
-  { level: t('大凶'), text: t('今日大凶：右眼狂跳'), detail: t('破财免灾，今天别点贵的奶茶。'), emoji: '💸', color: 'text-red-600' },
+  { level: '大吉', text: '今日大吉：摸鱼指数100%', detail: '今天老板出差，敞开摸吧！', emoji: '🎉', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：系统崩溃', detail: '趁现在，快去喝杯咖啡！', emoji: '☕', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：准点下班', detail: '没有任何阻碍，电梯都刚刚好。', emoji: '🏃', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：带薪拉屎', detail: '马桶犹如龙椅，舒适度满分。', emoji: '🚽', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：灵感爆棚', detail: '10分钟写完代码，剩下7小时50分摸鱼。', emoji: '💡', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：奖金翻倍', detail: '虽然是做梦，但梦里真的很爽。', emoji: '💰', color: 'text-green-500' },
+  { level: '大吉', text: '今日大吉：神仙乙方', detail: '今天对接的人意外地好说话。', emoji: '✨', color: 'text-green-500' },
+  { level: '小吉', text: '今日小吉：无事发生', detail: '没有需求就是最好的需求。', emoji: '😌', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：会议数量-2', detail: '不用去听废话了，但也可能有个甲方找麻烦。', emoji: '📅', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：下午茶+1', detail: '隔壁部门请客，白嫖快乐。', emoji: '🍰', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：Bug秒解', detail: '随便改了一行，居然跑通了。', emoji: '🐛', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：网速起飞', detail: '刷B站一点都不卡。', emoji: '🚀', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：老板笑脸', detail: '虽然不知为何，但总比板着脸好。', emoji: '😏', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：食堂加肉', detail: '阿姨今天手没抖。', emoji: '🍗', color: 'text-yellow-500' },
+  { level: '小吉', text: '今日小吉：不用排队', detail: '厕所空旷，空气清新。', emoji: '✨', color: 'text-yellow-500' },
+  { level: '平平', text: '今日平平：一切照旧', detail: '不好不坏，又混过一天。', emoji: '😐', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：假装忙碌', detail: '敲击键盘的速度与实际产出成反比。', emoji: '⌨️', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：准时打卡', detail: '晚一分钟算迟到，早一分钟算早退。', emoji: '⏰', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：5点准时下班', detail: '但有人想叫你加班。', emoji: '👀', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：喝水太多', detail: '一天去了8次洗手间，间接摸鱼。', emoji: '💧', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：忘带耳机', detail: '被迫听了一天同事的八卦。', emoji: '🎧', color: 'text-blue-500' },
+  { level: '平平', text: '今日平平：中午吃撑', detail: '下午犯困，生产力-50%。', emoji: '😴', color: 'text-blue-500' },
+  { level: '凶', text: '今日凶：天降大锅', detail: '不是你的Bug，但要你背锅。', emoji: '🥘', color: 'text-red-400' },
+  { level: '凶', text: '今日凶：产品改需求', detail: '刚写完的代码，又要推翻重来。', emoji: '📝', color: 'text-red-400' },
+  { level: '凶', text: '今日凶：钉钉狂响', detail: '响了23次，建议提前关机。', emoji: '🔔', color: 'text-red-400' },
+  { level: '凶', text: '今日凶：代码冲突', detail: '解Git冲突解到怀疑人生。', emoji: '💥', color: 'text-red-400' },
+  { level: '凶', text: '今日凶：周五发版', detail: '发版必崩，周末别想过了。', emoji: '🔥', color: 'text-red-400' },
+  { level: '凶', text: '今日凶：老板查岗', detail: '刚好在切后台，被抓个正着。', emoji: '😱', color: 'text-red-400' },
+  { level: '大凶', text: '今日大凶：全盘崩溃', detail: '没提交代码？节哀顺变。', emoji: '💀', color: 'text-red-600' },
+  { level: '大凶', text: '今日大凶：连环夺命Call', detail: '周报+月报+季报同时催，建议请病假。', emoji: '📱', color: 'text-red-600' },
+  { level: '大凶', text: '今日大凶：右眼狂跳', detail: '破财免灾，今天别点贵的奶茶。', emoji: '💸', color: 'text-red-600' },
 ];
 
 function NiumaAvatar({ 
@@ -236,16 +235,16 @@ function NiumaAvatar({
 }
 
 const FOCUS_CONTAINERS = [
-  { id: 'incense', name: t('线香(25m)'), emoji: '🥢', defaultTime: 25 },
-  { id: 'candle', name: t('蜡烛(30m)'), emoji: '🕯️', defaultTime: 30 },
-  { id: 'hourglass', name: t('沙漏(45m)'), emoji: '⏳', defaultTime: 45 },
-  { id: 'coffee', name: t('咖啡(20m)'), emoji: '☕', defaultTime: 20 },
-  { id: 'cigarette', name: t('香烟(10m)'), emoji: '🚬', defaultTime: 10 },
-  { id: 'ice', name: t('冰块(15m)'), emoji: '🧊', defaultTime: 15 },
-  { id: 'sakura', name: t('樱花(50m)'), emoji: '🌸', defaultTime: 50 },
-  { id: 'moon', name: t('月亮(90m)'), emoji: '🌙', defaultTime: 90 },
-  { id: 'campfire', name: t('篝火(60m)'), emoji: '🔥', defaultTime: 60 },
-  { id: 'ramen', name: t('泡面(5m)'), emoji: '🍜', defaultTime: 5 }
+  { id: 'incense', name: '线香(25m)', emoji: '🥢', defaultTime: 25 },
+  { id: 'candle', name: '蜡烛(30m)', emoji: '🕯️', defaultTime: 30 },
+  { id: 'hourglass', name: '沙漏(45m)', emoji: '⏳', defaultTime: 45 },
+  { id: 'coffee', name: '咖啡(20m)', emoji: '☕', defaultTime: 20 },
+  { id: 'cigarette', name: '香烟(10m)', emoji: '🚬', defaultTime: 10 },
+  { id: 'ice', name: '冰块(15m)', emoji: '🧊', defaultTime: 15 },
+  { id: 'sakura', name: '樱花(50m)', emoji: '🌸', defaultTime: 50 },
+  { id: 'moon', name: '月亮(90m)', emoji: '🌙', defaultTime: 90 },
+  { id: 'campfire', name: '篝火(60m)', emoji: '🔥', defaultTime: 60 },
+  { id: 'ramen', name: '泡面(5m)', emoji: '🍜', defaultTime: 5 }
 ];
 
 const playNoise = (type: string) => {
@@ -276,8 +275,8 @@ const MemoItems = React.memo(({
           <Plus size={40} />
         </div>
         <div>
-          <p className="text-primary font-bold text-lg tracking-tight">{t('今日无事')}</p>
-          <p className="text-secondary text-sm mt-1 max-w-[200px] mx-auto opacity-70">{t('勾勒你的今日牛马计划，让时间更有分量。')}</p>
+          <p className="text-primary font-bold text-lg tracking-tight">今日无事</p>
+          <p className="text-secondary text-sm mt-1 max-w-[200px] mx-auto opacity-70">勾勒你的今日牛马计划，让时间更有分量。</p>
         </div>
       </div>
     );
@@ -378,8 +377,8 @@ const MemoModal = React.memo(({
           <div className="flex flex-col">
             <h3 className="text-xl font-bold text-primary tracking-tight flex items-center gap-2">
               <div className="w-2 h-6 bg-brand rounded-full"></div>
-              {t('备忘清单')}
-                                      </h3>
+              备忘清单
+            </h3>
             <p className="text-xs text-secondary font-mono mt-0.5 opacity-70">{date}</p>
           </div>
           <button onClick={onClose} className="p-3 bg-card border border-app rounded-2xl text-secondary hover:bg-app hover:text-primary transition-all active:scale-90 shadow-sm border-dashed">
@@ -410,7 +409,7 @@ const MemoModal = React.memo(({
                 autoFocus
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder={t('键入待办事项...')} 
+                placeholder="键入待办事项..." 
                 className="w-full bg-card border border-app rounded-2xl px-5 py-4 text-[15px] focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand shadow-inner text-primary placeholder:text-tertiary transition-all"
               />
             </div>
@@ -474,15 +473,15 @@ const CalendarGrid = React.memo(({
 
     let isRest = ((isStandardWeekend || isCustomHoliday) && !isCustomWorkday) || isPaidLeave || isUnpaidLeave;
     
-    let label = t('上班');
+    let label = '上班';
     if (isPaidLeave) {
-      label = t('带薪休假');
+      label = '带薪休假';
     } else if (isUnpaidLeave) {
-      label = t('无薪休假');
+      label = '无薪休假';
     } else if (isRest) {
-      label = isStandardWeekend && !isCustomHoliday ? t('休息') : t('假期');
+      label = isStandardWeekend && !isCustomHoliday ? '休息' : '假期';
     } else if (isCustomWorkday) {
-      label = t('补班');
+      label = '补班';
     }
     
     const isToday = date === localTime.getDate() && calendarDate.getMonth() === localTime.getMonth() && calendarDate.getFullYear() === localTime.getFullYear();
@@ -823,13 +822,13 @@ export default function App() {
       hasLunchBreak: true,
       lunchStartTime: '12:00',
       lunchEndTime: '13:00',
-      customEvents: [{ id: '1', name: t('纪念日'), date: '2022-01-01', color: 'purple' }],
+      customEvents: [{ id: '1', name: '纪念日', date: '2022-01-01', color: 'purple' }],
       retirementDate: '2050-01-01',
       otherTimezone: 'Asia/Ho_Chi_Minh',
-      otherTimezoneLabel: t('胡志明'),
+      otherTimezoneLabel: '胡志明',
       localTimezone: initialTz.value,
       localTimezoneLabel: initialTz.label,
-      customItemName: t('自定义'), 
+      customItemName: '自定义', 
       customItemPrice: 100,
       pomodoroStartSound: 'none',
       pomodoroEndSound: 'bell',
@@ -952,7 +951,7 @@ export default function App() {
   }, [visaEntries]);
 
   // === Reminder State ===
-  const [reminderText, setReminderText] = useState(t('该摸一会儿鱼了，休息一下！'));
+  const [reminderText, setReminderText] = useState('该摸一会儿鱼了，休息一下！');
   const [reminderMins, setReminderMins] = useState(30);
   const [isReminderActive, setIsReminderActive] = useState(false);
   const [reminderTimeLeft, setReminderTimeLeft] = useState(30 * 60);
@@ -1086,7 +1085,7 @@ export default function App() {
        if (!hasLeaveType) {
           newMemos.unshift({
              id: 'sys_leave_' + Date.now(),
-             text: type === 'paid_leave' ? t('🌟 带薪假') : t('🍂 无薪假'),
+             text: type === 'paid_leave' ? '🌟 带薪假' : '🍂 无薪假',
              type,
              completed: true
           });
@@ -1101,64 +1100,64 @@ export default function App() {
   const [isOvertime, setIsOvertime] = useState(() => isSameDay ? (runtimeState?.isOvertime ?? false) : false);
   const [showMoney, setShowMoney] = useState(true);
   const [showUSD, setShowUSD] = useState(false);
-  const [excuse, setExcuse] = useState(t('刚刚我的键盘卡主了，我在测试硬件抗冲击力...'));
+  const [excuse, setExcuse] = useState('刚刚我的键盘卡主了，我在测试硬件抗冲击力...');
   
   const generateExcuse = () => {
     const excuses = [
-      t('报告老板，我的键盘正在进行系统级的自我净化。'),
-      t('正在等npm装包，进度条卡在99%已经十分钟了。'),
-      t('我在测试系统的抗压能力，顺便研究下缓存为什么没失效。'),
-      t('刚才闭眼是在做需求可视化，绝不是在打盹。'),
-      t('领导，这叫敏捷开发中的‘战略性停顿’。'),
-      t('不是在发呆，是在和产品的灵魂深切对话，寻找业务痛点。'),
-      t('眼睛干涩，正在执行医嘱：眺望远方20英尺外20秒。'),
-      t('这不是摸鱼，这是在为下一行能够改变世界的代码积攒灵感。'),
-      t('我在思考如何重构底层的屎山代码，太复杂了脑壳疼。'),
-      t('正在查阅行业前沿资料，分析竞品的最新动态。'),
-      t('刚才在想中午跟同事去吃哪家对团队建设最有帮助。'),
-      t('本地环境崩了，正在重新配，太难了！'),
-      t('刚才在尝试通过量子纠缠的方式远程修复Bug。'),
-      t('我在观察办公室的空气动力学，为了提高工位效率。'),
-      t('正在深度思考Carbon在未来的地位。'),
-      t('其实我是在做深度呼吸训练，以此降低服务器的碳排放。'),
-      t('刚才那个姿势是在模仿罗丹的‘思考者’，试图获得哲学加持。'),
-      t('我发现代码里有一个逻辑漏洞，正在脑海中跑虚拟机测试。'),
-      t('正在计算公司上市后我手里的期权能买几斤猪肉。'),
-      t('老板，我正在用意念与服务器进行底层协议握手。'),
-      t('这不叫迟到，这叫‘分布式时差办公’。'),
-      t('我在研究黑洞，因为我感觉我的逻辑被吞噬了。'),
-      t('刚才是幻觉，我刚才其实在另一个平行宇宙已经写完需求了。'),
-      t('我在测试鼠标垫的摩擦系数，确保拖动代码时的极致丝滑。'),
-      t('刚才那个眼神是在扫描办公室的安全漏洞。'),
-      t('正在等待宇宙射线的干扰消失，否则代码会产生位翻转。'),
-      t('我在通过心跳频率判断代码的运行效率。'),
-      t('刚才闭眼是在跟AI贾维斯灵魂沟通。'),
-      t('这不叫偷懒，这叫给CPU降频以延长企业资产寿命。'),
-      t('我正在进行语义分析，试图理解产品经理那句‘简单改下’背后的含义。'),
-      t('我在跟桌上的橡皮鸭解释为何这段代码它就是跑不通。'),
-      t('正在等咖啡机的进度条，那才是我的生命值进度条。'),
-      t('刚才是在测试办公室的隔音效果。'),
-      t('我在思考如果人类灭绝了，这段代码还能不能继续运行下去。'),
-      t('我在进行‘离散数学交互演习’。'),
-      t('刚才那个哈欠是在排出大脑多余的冗余数据。'),
-      t('老板，我在给代码做心理辅导，它最近有点抗拒生产环境。'),
-      t('我在研究如何用5G信号控制我的午餐外卖。'),
-      t('刚才低头是在感叹人生如戏，全是Bug。'),
-      t('我在寻找代码中的‘艺术感’。'),
-      t('正在进行高强度的脑机接口测试。'),
-      t('这叫‘内省式开发’，在安静中寻找逻辑的真谛。'),
-      t('我在为下个季度的KPI提前担忧，导致焦虑性停工。'),
-      t('正在试图用‘原力’修复那段该死的旧代码。'),
-      t('老板，我正在试图突破由于过度工作造成的维度障壁。'),
-      t('我在思考如何把这个项目做成元宇宙模式。'),
-      t('刚才其实是在对代码进行‘无声的抗议’。'),
-      t('我在估算如果我现在跳槽，公司的损失会有多大。'),
-      t('我在试图理解人类存在的意义，顺便写个Hello World。'),
-      t('我在跟空调的风向进行斗争。'),
-      t('正在跟自己的影子对需求。'),
-      t('刚才是灵魂出窍，去巡查了一下机房。'),
-      t('我在练习如何用眼神杀掉一个Bug。'),
-      t('这叫‘意识流编码’，我正在积攒流量。')
+      "报告老板，我的键盘正在进行系统级的自我净化。",
+      "正在等npm装包，进度条卡在99%已经十分钟了。",
+      "我在测试系统的抗压能力，顺便研究下缓存为什么没失效。",
+      "刚才闭眼是在做需求可视化，绝不是在打盹。",
+      "领导，这叫敏捷开发中的‘战略性停顿’。",
+      "不是在发呆，是在和产品的灵魂深切对话，寻找业务痛点。",
+      "眼睛干涩，正在执行医嘱：眺望远方20英尺外20秒。",
+      "这不是摸鱼，这是在为下一行能够改变世界的代码积攒灵感。",
+      "我在思考如何重构底层的屎山代码，太复杂了脑壳疼。",
+      "正在查阅行业前沿资料，分析竞品的最新动态。",
+      "刚才在想中午跟同事去吃哪家对团队建设最有帮助。",
+      "本地环境崩了，正在重新配，太难了！",
+      "刚才在尝试通过量子纠缠的方式远程修复Bug。",
+      "我在观察办公室的空气动力学，为了提高工位效率。",
+      "正在深度思考Carbon在未来的地位。",
+      "其实我是在做深度呼吸训练，以此降低服务器的碳排放。",
+      "刚才那个姿势是在模仿罗丹的‘思考者’，试图获得哲学加持。",
+      "我发现代码里有一个逻辑漏洞，正在脑海中跑虚拟机测试。",
+      "正在计算公司上市后我手里的期权能买几斤猪肉。",
+      "老板，我正在用意念与服务器进行底层协议握手。",
+      "这不叫迟到，这叫‘分布式时差办公’。",
+      "我在研究黑洞，因为我感觉我的逻辑被吞噬了。",
+      "刚才是幻觉，我刚才其实在另一个平行宇宙已经写完需求了。",
+      "我在测试鼠标垫的摩擦系数，确保拖动代码时的极致丝滑。",
+      "刚才那个眼神是在扫描办公室的安全漏洞。",
+      "正在等待宇宙射线的干扰消失，否则代码会产生位翻转。",
+      "我在通过心跳频率判断代码的运行效率。",
+      "刚才闭眼是在跟AI贾维斯灵魂沟通。",
+      "这不叫偷懒，这叫给CPU降频以延长企业资产寿命。",
+      "我正在进行语义分析，试图理解产品经理那句‘简单改下’背后的含义。",
+      "我在跟桌上的橡皮鸭解释为何这段代码它就是跑不通。",
+      "正在等咖啡机的进度条，那才是我的生命值进度条。",
+      "刚才是在测试办公室的隔音效果。",
+      "我在思考如果人类灭绝了，这段代码还能不能继续运行下去。",
+      "我在进行‘离散数学交互演习’。",
+      "刚才那个哈欠是在排出大脑多余的冗余数据。",
+      "老板，我在给代码做心理辅导，它最近有点抗拒生产环境。",
+      "我在研究如何用5G信号控制我的午餐外卖。",
+      "刚才低头是在感叹人生如戏，全是Bug。",
+      "我在寻找代码中的‘艺术感’。",
+      "正在进行高强度的脑机接口测试。",
+      "这叫‘内省式开发’，在安静中寻找逻辑的真谛。",
+      "我在为下个季度的KPI提前担忧，导致焦虑性停工。",
+      "正在试图用‘原力’修复那段该死的旧代码。",
+      "老板，我正在试图突破由于过度工作造成的维度障壁。",
+      "我在思考如何把这个项目做成元宇宙模式。",
+      "刚才其实是在对代码进行‘无声的抗议’。",
+      "我在估算如果我现在跳槽，公司的损失会有多大。",
+      "我在试图理解人类存在的意义，顺便写个Hello World。",
+      "我在跟空调的风向进行斗争。",
+      "正在跟自己的影子对需求。",
+      "刚才是灵魂出窍，去巡查了一下机房。",
+      "我在练习如何用眼神杀掉一个Bug。",
+      "这叫‘意识流编码’，我正在积攒流量。"
     ];
     setExcuse(excuses[Math.floor(Math.random() * excuses.length)]);
   };
@@ -1247,12 +1246,12 @@ export default function App() {
   const isHolidayOrWeekend = (isWeekend || isPublicHoliday) && !isMakeUpWorkday;
   const isRestDay = isHolidayOrWeekend || isTodayPaidLeave || isTodayUnpaidLeave;
   
-  let restTypeLabel = t('周末休息');
+  let restTypeLabel = "周末休息";
   const todayHolidayName = getCustomHolidayName(localTime, config.holidayRegion);
   if (isTodayPaidLeave) {
-     restTypeLabel = t('带薪休假');
+     restTypeLabel = "带薪休假";
   } else if (isTodayUnpaidLeave) {
-     restTypeLabel = t('无薪休假');
+     restTypeLabel = "无薪休假";
   } else if (todayHolidayName) {
      restTypeLabel = `${todayHolidayName}假期`;
   }
@@ -1336,7 +1335,7 @@ export default function App() {
             setIsPomodoroActive(false);
             setCompletedPomodoros(prev => prev + 1);
             if ('Notification' in window && Notification.permission === "granted") {
-               new Notification(t('番茄钟完成'), { body: t('时间到，休息一下吧！') });
+               new Notification("番茄钟完成", { body: "时间到，休息一下吧！" });
             }
             playAlertSound(configRef.current.pomodoroEndSound);
          } else {
@@ -1350,7 +1349,7 @@ export default function App() {
          if (nextTime <= 0) {
             setReminderTimeLeft(reminderMinsRef.current * 60);
             if ('Notification' in window && Notification.permission === "granted") {
-               new Notification(t('定时提醒'), { body: reminderTextRef.current });
+               new Notification("定时提醒", { body: reminderTextRef.current });
             }
             playAlertSound(configRef.current.pomodoroBreakSound);
          } else {
@@ -1490,7 +1489,7 @@ export default function App() {
   const slackThisWeek = Math.max(0, pastWorkDaysThisWeek * derivedHoursPerDay * 0.15 + slackSecondsToday / 3600);
   
   const bestDayEarned = Math.max(earnedToday, (config.monthlySalary / (currentMonthWorkDays || 22)));
-  const weekDaysStr = [t('周日'),t('周一'),t('周二'),t('周三'),t('周四'),t('周五'),t('周六')];
+  const weekDaysStr = ['周日','周一','周二','周三','周四','周五','周六'];
   let bestDayStr = weekDaysStr[localTime.getDay()];
   if (bestDayEarned > earnedToday && pastWorkDaysThisWeek > 0) {
     const yesterday = new Date(localTime.getFullYear(), localTime.getMonth(), localTime.getDate() - 1);
@@ -1544,7 +1543,7 @@ export default function App() {
         const isMakeUp = isDateCustomWorkday(tDate, config.holidayRegion);
         isSelectedLeaveDateNaturalRest = (isWknd || isHol) && !isMakeUp;
         if (isSelectedLeaveDateNaturalRest) {
-           selectedLeaveDateLabel = isHolStr ? `${isHolStr}假期，无需请假` : t('周末休息日，无需请假');
+           selectedLeaveDateLabel = isHolStr ? `${isHolStr}假期，无需请假` : `周末休息日，无需请假`;
         }
      }
   }
@@ -1584,7 +1583,7 @@ export default function App() {
               <div className="flex items-center gap-1.5 md:gap-3 bg-card-inner/60 backdrop-blur-md pl-2 md:pl-4 pr-1.5 md:pr-2 py-1 md:py-1.5 rounded-2xl border border-app shadow-sm min-w-0">
                 <div className="flex flex-col text-right truncate">
                   <div className="text-[10px] md:text-sm font-semibold text-primary mb-0.5 flex items-center gap-1 md:gap-2 justify-end truncate">
-                    <span className="text-[9px] md:text-xs text-secondary font-medium hidden md:inline-block">{t('周')}{[t('日'),t('一'),t('二'),t('三'),t('四'),t('五'),t('六')][localTime.getDay()]}</span>
+                    <span className="text-[9px] md:text-xs text-secondary font-medium hidden md:inline-block">周{['日','一','二','三','四','五','六'][localTime.getDay()]}</span>
                     <span className="truncate">{localTime.getFullYear()}-{String(localTime.getMonth() + 1).padStart(2, '0')}-{String(localTime.getDate()).padStart(2, '0')}</span>
                   </div>
                   <div className="text-[8px] md:text-[10px] text-secondary/80 font-medium tracking-wide truncate mt-0.5 md:mt-0">
@@ -1596,9 +1595,6 @@ export default function App() {
                    <div className="absolute inset-0 bg-brand/5 group-hover:bg-brand/10 transition-colors rounded-xl"></div>
                    <span className="text-sm md:text-base relative z-10 group-hover:scale-110 transition-transform">🥠</span>
                    {!dailyFortune && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-card animate-pulse"></span>}
-                </button>
-                <button onClick={() => setLanguage(getLanguage() === 'zh' ? 'en' : 'zh')} className="w-7 h-7 md:w-8 md:h-8 bg-card rounded-xl border border-app shadow-inner text-primary flex items-center justify-center transition-all hover:scale-105 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-brand shrink-0 text-xs font-bold">
-                   {getLanguage() === 'zh' ? 'EN' : '中'}
                 </button>
                 <button onClick={() => setIsLightMode(!isLightMode)} className="w-7 h-7 md:w-8 md:h-8 bg-card rounded-xl border border-app shadow-inner text-primary flex items-center justify-center transition-all hover:scale-105 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-brand shrink-0">
                    {isLightMode ? (
@@ -1619,7 +1615,7 @@ export default function App() {
                 <div className="flex justify-between items-end pl-1 mb-1">
                   <span className="flex items-center gap-2 text-[11px] font-bold text-tertiary uppercase tracking-widest">
                     <div className="w-2 h-2 rounded-full border-[2px] border-brand shadow-[0_0_5px_rgba(0,255,65,0.5)]"></div>
-                    {isRestDay ? t('今日休息') : t('今日进度标尺')}
+                    {isRestDay ? '今日休息' : '今日进度标尺'}
                   </span>
                   <div className="flex items-end gap-1 font-mono">
                     <span className="text-brand font-black text-lg tracking-tighter drop-shadow-[0_0_8px_rgba(0,255,65,0.4)] leading-none mt-1">
@@ -1659,7 +1655,7 @@ export default function App() {
                       <span>{config.startTime}</span>
                       {config.hasLunchBreak && (
                         <div className="flex flex-col items-center gap-0.5 text-orange-500/60 relative -mt-1.5 group-hover:text-orange-500 transition-colors">
-                           <span className="text-[8px] bg-orange-500/10 px-1.5 py-0.5 rounded-sm">{t('午休期间')}</span>
+                           <span className="text-[8px] bg-orange-500/10 px-1.5 py-0.5 rounded-sm">午休期间</span>
                            <span>{config.lunchStartTime} - {config.lunchEndTime}</span>
                         </div>
                       )}
@@ -1683,7 +1679,7 @@ export default function App() {
                      {TIMEZONES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                    </select>
                    <div className="text-[10px] text-tertiary mb-0.5 flex items-center gap-1 group">
-                     {config.localTimezoneLabel}{t('时间')} <span className="transform rotate-90 text-[8px] opacity-70 group-hover:opacity-100 mix-blend-screen transition-opacity">▸</span>
+                     {config.localTimezoneLabel}时间 <span className="transform rotate-90 text-[8px] opacity-70 group-hover:opacity-100 mix-blend-screen transition-opacity">▸</span>
                    </div>
                    <div className="text-xl font-mono text-brand font-semibold leading-none drop-shadow-[0_0_8px_rgba(0,255,65,0.4)]">{pad0(localTime.getHours())}:{pad0(localTime.getMinutes())}:{pad0(localTime.getSeconds())}</div>
                    <div className="text-[9px] text-primary/40 mt-1 truncate max-w-[80%]">{config.localTimezone.split('/')[1] || config.localTimezone}</div>
@@ -1703,7 +1699,7 @@ export default function App() {
                      {TIMEZONES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                    </select>
                    <div className="text-[10px] text-tertiary mb-0.5 flex items-center justify-end w-full gap-1 group">
-                     {config.otherTimezoneLabel}{t('时间')} <span className="transform rotate-90 text-[8px] opacity-70 group-hover:opacity-100 mix-blend-screen transition-opacity">▸</span>
+                     {config.otherTimezoneLabel}时间 <span className="transform rotate-90 text-[8px] opacity-70 group-hover:opacity-100 mix-blend-screen transition-opacity">▸</span>
                    </div>
                    <div className="text-xl font-mono text-primary font-medium leading-none">{pad0(otherTime.getHours())}:{pad0(otherTime.getMinutes())}:{pad0(otherTime.getSeconds())}</div>
                    <div className="text-[9px] text-primary/40 mt-1 truncate max-w-[80%] text-right float-right">{config.otherTimezone.split('/')[1] || config.otherTimezone}</div>
@@ -1715,7 +1711,7 @@ export default function App() {
             <div className="bg-card rounded-full px-3 py-2 text-xs flex items-center justify-between border border-app">
                <div className="flex items-center gap-2 text-yellow-500/80 truncate pr-2">
                   <span>📢</span>
-                  <span className="truncate">{t('距离发工资还有')} {daysToPayday} {t('天，再坚持一下！💪')}</span>
+                  <span className="truncate">距离发工资还有 {daysToPayday} 天，再坚持一下！💪</span>
                </div>
                <div className="flex items-center gap-1 text-secondary cursor-pointer whitespace-nowrap relative shrink-0" onClick={() => {
                   const input = document.getElementById('native-calendar') as HTMLInputElement;
@@ -1725,7 +1721,7 @@ export default function App() {
                     input.click();
                   }
                }}>
-                  <span>{t('查看日历')}</span>
+                  <span>查看日历</span>
                   <CalendarIcon size={12} />
                   <div className="absolute inset-0" onClick={() => setActiveTab('calendar')}></div>
                </div>
@@ -1779,7 +1775,7 @@ export default function App() {
 
                   <div className="text-center z-10 w-full mb-3">
                      <div className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1 inline-block ${isRestDay ? 'text-primary bg-blue-500/10' : nowSecs < startSecs ? 'text-secondary bg-secondary/10' : nowSecs > endSecs ? 'text-brand bg-brand/10' : isLunchBreak ? 'text-orange-500 bg-orange-500/10' : 'text-primary bg-primary/10'}`}>
-                        {isRestDay ? `${restTypeLabel} ✨` : nowSecs < startSecs ? t('还没上班') : nowSecs > endSecs ? t('已经下班') : isLunchBreak ? t('午休干饭 🍚') : t('牛马进行中 ⚡️')}
+                        {isRestDay ? `${restTypeLabel} ✨` : nowSecs < startSecs ? '还没上班' : nowSecs > endSecs ? '已经下班' : isLunchBreak ? '午休干饭 🍚' : '牛马进行中 ⚡️'}
                      </div>
                      <div className="text-[18px] font-mono font-bold tracking-tight text-primary/90">
                         {pad0(Math.floor(workSecondsToday / 3600))}:
@@ -1790,24 +1786,24 @@ export default function App() {
 
                   <div className="w-full mb-1">
                      <div className="bg-card-inner rounded-xl p-1.5 border border-app text-center">
-                        <span className="text-[9px] text-tertiary block mb-0.5">{t('牛马指数')}</span>
+                        <span className="text-[9px] text-tertiary block mb-0.5">牛马指数</span>
                         <span className="text-[11px] font-medium text-primary">
-                          {isRestDay ? t('🏖️ 幸福躺平中') :
-                           nowSecs < startSecs ? t('😴 续命睡眠中') :
-                           nowSecs >= endSecs ? t('🎉 灵魂归位') : 
-                           isLunchBreak ? t('😋 能量补给中') :
-                           (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.9 ? t('💀 彻底疯狂') :
-                           (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.7 ? t('🤯 逐渐暴躁') :
-                           (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.4 ? t('🔋 电量过半') :
-                           (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.2 ? t('🤔 陷入沉思') :
-                           t('☕️ 能量回收中')}
+                          {isRestDay ? "🏖️ 幸福躺平中" :
+                           nowSecs < startSecs ? "😴 续命睡眠中" :
+                           nowSecs >= endSecs ? "🎉 灵魂归位" : 
+                           isLunchBreak ? "😋 能量补给中" :
+                           (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.9 ? "💀 彻底疯狂" :
+                           (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.7 ? "🤯 逐渐暴躁" :
+                           (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.4 ? "🔋 电量过半" :
+                           (workSecondsToday / Math.max(1, (endSecs - startSecs))) > 0.2 ? "🤔 陷入沉思" :
+                           "☕️ 能量回收中"}
                         </span>
                      </div>
                   </div>
 
                   <div className="w-full py-2 rounded-xl flex flex-col items-center justify-center font-black uppercase tracking-tighter bg-card border-none">
                     <span className={`text-xs ${isRestDay ? 'text-primary' : nowSecs < startSecs ? 'text-secondary' : nowSecs > endSecs ? 'text-brand' : isLunchBreak ? 'text-orange-500' : 'text-primary'}`}>
-                      {isRestDay ? `${restTypeLabel}愉快 🏖️` : nowSecs < startSecs ? t('等待打工') : nowSecs > endSecs ? t('下班啦 ✨') : isLunchBreak ? t('干饭啦 🍚') : t('正在牛马 ⚡️')}
+                      {isRestDay ? `${restTypeLabel}愉快 🏖️` : nowSecs < startSecs ? '等待打工' : nowSecs > endSecs ? '下班啦 ✨' : isLunchBreak ? '干饭啦 🍚' : '正在牛马 ⚡️'}
                     </span>
                   </div>
                </div>
@@ -1818,7 +1814,7 @@ export default function App() {
 
                   <div>
                     <div className="flex items-center justify-between text-xs text-secondary mb-2">
-                       <span>{t('今日已赚')}</span>
+                       <span>今日已赚</span>
                        <div className="flex items-center gap-1.5">
                           <button onClick={() => setShowUSD(!showUSD)} className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${showUSD ? 'border-brand text-brand' : 'border-app-strong text-secondary hover:text-primary'}`}>USD</button>
                           <button onClick={() => setShowMoney(!showMoney)} className="text-tertiary hover:text-primary">
@@ -1843,14 +1839,14 @@ export default function App() {
                   <div className="flex flex-col gap-2 mt-4">
                      <div className="bg-card-inner rounded-xl p-2.5 flex items-center justify-between border border-app">
                         <div className="flex flex-col">
-                           <span className="text-[9px] text-tertiary mb-0.5">{t('本月已赚（预估）')}</span>
+                           <span className="text-[9px] text-tertiary mb-0.5">本月已赚（预估）</span>
                            <span className="text-primary font-mono text-xs">{sym} {hide(formatMoney(earnedThisMonth / ex))}</span>
                         </div>
                         <div className="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center text-brand">💰</div>
                      </div>
                      <div className="bg-card-inner rounded-xl p-2.5 flex items-center justify-between border border-app">
                         <div className="flex flex-col">
-                           <span className="text-[9px] text-tertiary mb-0.5">{t('本月工时')}</span>
+                           <span className="text-[9px] text-tertiary mb-0.5">本月工时</span>
                            <span className="text-primary font-mono text-xs">{hoursThisMonth.toFixed(1)} <span className="text-[10px] text-tertiary">h</span></span>
                         </div>
                         <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400"><TrendingUp size={12} /></div>
@@ -1861,7 +1857,7 @@ export default function App() {
 
              {/* Bottom row: Accumulated */}
              <div className="bg-card rounded-2xl p-3 border border-app flex items-center justify-between shadow-lg px-4">
-                <span className="text-[11px] text-secondary">{t('历史累计已赚 (估算)')}</span>
+                <span className="text-[11px] text-secondary">历史累计已赚 (估算)</span>
                 <span className="text-primary font-mono text-sm tracking-tight">{sym} {hide(formatMoney((totalEarnedBeforeToday + earnedThisMonth) / ex))}</span>
              </div>
           </div>
@@ -1877,34 +1873,34 @@ export default function App() {
                         value={conversionTimeframe}
                         onChange={e => setConversionTimeframe(e.target.value as any)}
                       >
-                         <option value="today">{t('今日收入换算 & 购买力')}</option>
-                         <option value="month">{t('本月收入换算 & 购买力')}</option>
-                         <option value="year">{t('本年收入换算 & 购买力')}</option>
+                         <option value="today">今日收入换算 & 购买力</option>
+                         <option value="month">本月收入换算 & 购买力</option>
+                         <option value="year">本年收入换算 & 购买力</option>
                       </select>
                       <div className="flex gap-2">
-                         <div className="text-[10px] bg-primary/5 text-primary/80 px-2 py-1 flex items-center rounded-full hover:bg-primary/10 border border-app transition-colors cursor-pointer" onClick={generateShareImage}>{t('📸 分享')}</div>
-                         <div className="text-[10px] bg-brand/10 text-brand px-2 py-1 flex items-center rounded-full gap-1 border border-brand/20 shadow-sm cursor-pointer" onClick={() => setShowUSD(!showUSD)}>{t('双币展示')}</div>
+                         <div className="text-[10px] bg-primary/5 text-primary/80 px-2 py-1 flex items-center rounded-full hover:bg-primary/10 border border-app transition-colors cursor-pointer" onClick={generateShareImage}>📸 分享</div>
+                         <div className="text-[10px] bg-brand/10 text-brand px-2 py-1 flex items-center rounded-full gap-1 border border-brand/20 shadow-sm cursor-pointer" onClick={() => setShowUSD(!showUSD)}>双币展示</div>
                       </div>
                    </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2 mb-3">
                    <div className="bg-card-inner rounded-xl p-3 border border-app flex flex-col items-center justify-center relative overflow-hidden">
-                      <span className="text-[10px] text-tertiary mb-1 tracking-wider">{t('人民币 (CNY)')}</span>
+                      <span className="text-[10px] text-tertiary mb-1 tracking-wider">人民币 (CNY)</span>
                       <span className="text-brand font-mono text-2xl font-bold tracking-tight">¥{hide(formatMoney(displayEarned))}</span>
                    </div>
                    <div className="bg-card-inner rounded-xl p-3 border border-app flex flex-col items-center justify-center relative overflow-hidden">
-                      <span className="text-[10px] text-tertiary mb-1 tracking-wider">{t('美元 (USD)')}</span>
+                      <span className="text-[10px] text-tertiary mb-1 tracking-wider">美元 (USD)</span>
                       <span className="text-primary font-mono text-2xl font-bold tracking-tight">${hide(formatMoney(displayEarned / config.exchangeRateUsd))}</span>
                    </div>
                 </div>
 
                 <div className="flex overflow-x-auto no-scrollbar gap-2 pb-1">
-                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">🧋</span>} label={t('奶茶')} value={hide((displayEarned / MILK_TEA_PRICE).toFixed(1))} unit={t('杯')} color="text-orange-300" />
-                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">☕️</span>} label={t('咖啡')} value={hide((displayEarned / COFFEE_PRICE).toFixed(1))} unit={t('杯')} color="text-amber-400" />
-                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">⛽️</span>} label={t('汽油')} value={hide((displayEarned / GAS_PRICE).toFixed(1))} unit="L" color="text-red-400" />
+                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">🧋</span>} label="奶茶" value={hide((displayEarned / MILK_TEA_PRICE).toFixed(1))} unit="杯" color="text-orange-300" />
+                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">☕️</span>} label="咖啡" value={hide((displayEarned / COFFEE_PRICE).toFixed(1))} unit="杯" color="text-amber-400" />
+                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">⛽️</span>} label="汽油" value={hide((displayEarned / GAS_PRICE).toFixed(1))} unit="L" color="text-red-400" />
                    <ConversionCard icon={<span className="text-xl filter drop-shadow-md">📱</span>} label="iPhone" value={hide(((displayEarned / IPHONE_PRICE) * 100).toFixed(2))} unit="%" color="text-blue-300" />
-                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">✨</span>} label={config.customItemName} value={hide((displayEarned / config.customItemPrice).toFixed(2))} unit={t('个')} color="text-purple-400" />
+                   <ConversionCard icon={<span className="text-xl filter drop-shadow-md">✨</span>} label={config.customItemName} value={hide((displayEarned / config.customItemPrice).toFixed(2))} unit="个" color="text-purple-400" />
                 </div>
              </div>
           </div>
@@ -1912,14 +1908,14 @@ export default function App() {
           {/* 4. COUNTDOWN SYSTEM (Horizontal Scroll) */}
           <div className="px-4 md:px-8 py-2 max-w-5xl mx-auto w-full">
              <div className="flex items-center justify-between mb-3 text-sm">
-                <span className="text-primary font-medium">{t('倒计时')}</span>
-                <span className="text-xs text-tertiary cursor-pointer flex items-center" onClick={() => setShowAllCountdowns(true)}>{t('全部')} <ChevronRight size={12} /></span>
+                <span className="text-primary font-medium">倒计时</span>
+                <span className="text-xs text-tertiary cursor-pointer flex items-center" onClick={() => setShowAllCountdowns(true)}>全部 <ChevronRight size={12} /></span>
              </div>
              
              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 snaps-x">
                 {!isRestDay ? (
                    <CountdownCard 
-                      title={t('下班倒计时')}
+                      title="下班倒计时"
                       time={`${pad0(Math.floor(offWorkSecs / 3600))}:${pad0(Math.floor((offWorkSecs % 3600)/60))}:${pad0(offWorkSecs % 60)}`}
                       desc={`${config.endTime}下班`}
                       progress={100 - (offWorkSecs / (derivedHoursPerDay * 3600)) * 100}
@@ -1928,24 +1924,24 @@ export default function App() {
                    />
                 ) : (
                    <CountdownCard 
-                      title={t('今日状态')}
-                      time={t('休息中')}
-                      desc={t('尽情享受假期')}
+                      title="今日状态"
+                      time="休息中"
+                      desc="尽情享受假期"
                       progress={100}
                       icon={<Briefcase size={16} />}
                       color="green"
                    />
                 )}
                 <CountdownCard 
-                   title={isRestDay ? t('距离下个休息日') : t('距离休息日')}
+                   title={isRestDay ? "距离下个休息日" : "距离休息日"}
                    time={`${daysToNextRestDay} 天`}
-                   desc={t('盼望好日子')}
+                   desc="盼望好日子"
                    progress={100 - (daysToNextRestDay / 7) * 100}
                    icon={<CalendarIcon size={16} />}
                    color="yellow"
                 />
                 <CountdownCard 
-                   title={t('距离发薪日')}
+                   title="距离发薪日"
                    time={`${daysToPayday} 天`}
                    desc={`${config.payday}号发薪`}
                    progress={100 - (daysToPayday / daysInMonth) * 100}
@@ -1968,7 +1964,7 @@ export default function App() {
                    );
                 })}
                  <CountdownCard 
-                   title={t('距离退休')}
+                   title="距离退休"
                    time={`${daysToRetire}天`}
                    desc={retireDateObj.toLocaleDateString()}
                    progress={daysToRetire < 0 ? 100 : Math.max(0, 100 - (daysToRetire / (365*30)) * 100)}
@@ -1982,7 +1978,7 @@ export default function App() {
           <div className="px-4 md:px-8 py-2 max-w-5xl mx-auto w-full">
             <div className="bg-card-inner rounded-2xl border border-app shadow-sm p-4">
               <div className="flex justify-between items-center mb-4">
-                 <span className="text-xs md:text-sm font-bold text-primary flex items-center gap-1.5"><span className="text-sm">✈️</span> {t('请假操作板')}</span>
+                 <span className="text-xs md:text-sm font-bold text-primary flex items-center gap-1.5"><span className="text-sm">✈️</span> 请假操作板</span>
                  <input 
                    type="date" 
                    value={leaveDateStr}
@@ -1993,7 +1989,7 @@ export default function App() {
               <div className="flex gap-3 w-full">
                 {isSelectedLeaveDateNaturalRest ? (
                    <div className="w-full text-center py-4 bg-primary/5 rounded-xl text-primary/80 text-xs tracking-wider font-medium">
-                       {t('所选日期是')}{selectedLeaveDateLabel} 🎉
+                       所选日期是{selectedLeaveDateLabel} 🎉
                    </div>
                 ) : (
                   <>
@@ -2002,14 +1998,14 @@ export default function App() {
                           <span className="text-xl">🌟</span>
                           {((memos || {})[leaveDateStr] || []).some((m: any) => m.type === 'paid_leave') && <span className="text-[10px] text-blue-500">✅</span>}
                         </div>
-                        <span className="text-[11px] md:text-xs tracking-wider mt-1">{t('带薪假')}</span>
+                        <span className="text-[11px] md:text-xs tracking-wider mt-1">带薪假</span>
                      </button>
                      <button onClick={() => toggleLeaveType('unpaid_leave')} className={`flex-1 flex max-w-sm flex-col items-center justify-center gap-1 py-3 rounded-xl border transition-all shadow-sm ${((memos || {})[leaveDateStr] || []).some((m: any) => m.type === 'unpaid_leave') ? 'bg-orange-500/10 border-orange-500/40 text-orange-500 font-bold' : 'bg-card border-app text-secondary hover:bg-card-inner hover:text-primary'}`}>
                         <div className="flex items-center gap-1">
                           <span className="text-xl">🍂</span>
                           {((memos || {})[leaveDateStr] || []).some((m: any) => m.type === 'unpaid_leave') && <span className="text-[10px] text-orange-500">✅</span>}
                         </div>
-                        <span className="text-[11px] md:text-xs tracking-wider mt-1">{t('无薪假')}</span>
+                        <span className="text-[11px] md:text-xs tracking-wider mt-1">无薪假</span>
                      </button>
                   </>
                 )}
@@ -2024,13 +2020,13 @@ export default function App() {
                 
                 <div className="flex-1 z-10">
                    <div className="flex items-center gap-1.5 mb-0.5">
-                     <span className="text-xs text-primary font-medium">{t('今日摸鱼')}</span>
+                     <span className="text-xs text-primary font-medium">今日摸鱼</span>
                      <span className="text-lg font-mono font-bold text-brand">{Math.floor(slackSecondsToday / 60)}</span>
-                     <span className="text-[10px] text-tertiary">{t('分钟')}</span>
-                     <button onClick={() => setSlackSecondsToday(0)} className="text-[9px] px-1.5 py-0.5 bg-card-inner border border-app rounded text-secondary hover:text-primary ml-1">{t('归零')}</button>
+                     <span className="text-[10px] text-tertiary">分钟</span>
+                     <button onClick={() => setSlackSecondsToday(0)} className="text-[9px] px-1.5 py-0.5 bg-card-inner border border-app rounded text-secondary hover:text-primary ml-1">归零</button>
                    </div>
                    <div className="text-[10px] text-tertiary font-mono">
-                     {t('≈ 白赚')} <span className="text-brand font-semibold text-[12px]">{sym}{hide(formatMoney(slackLoss / ex))}</span>
+                     ≈ 白赚 <span className="text-brand font-semibold text-[12px]">{sym}{hide(formatMoney(slackLoss / ex))}</span>
                    </div>
                 </div>
                 
@@ -2040,13 +2036,13 @@ export default function App() {
                   }`}
                   onClick={() => {
                     if (!isSlacking && !isCurrentlyWorkingTime) {
-                      setToast({ message: t('当前非工作时间，你在自愿加班吗？不算摸鱼哦！'), type: 'info' });
+                      setToast({ message: "当前非工作时间，你在自愿加班吗？不算摸鱼哦！", type: 'info' });
                       return;
                     }
                     setIsSlacking(!isSlacking);
                   }}
                 >
-                   {isSlacking ? t('正在摸鱼中...') : t('开始摸鱼')}
+                   {isSlacking ? '正在摸鱼中...' : '开始摸鱼'}
                 </button>
              </div>
 
@@ -2055,13 +2051,13 @@ export default function App() {
                 
                 <div className="flex-1 z-10">
                    <div className="flex items-center gap-1.5 mb-0.5">
-                     <span className="text-xs text-red-500/80 font-medium">{t('义务加班')}</span>
+                     <span className="text-xs text-red-500/80 font-medium">义务加班</span>
                      <span className="text-lg font-mono font-bold text-red-500">{Math.floor(overtimeSecondsToday / 60)}</span>
-                     <span className="text-[10px] text-tertiary">{t('分钟')}</span>
-                     <button onClick={() => setOvertimeSecondsToday(0)} className="text-[9px] px-1.5 py-0.5 bg-red-500/10 rounded text-red-500 hover:bg-red-500/20 ml-1">{t('归零')}</button>
+                     <span className="text-[10px] text-tertiary">分钟</span>
+                     <button onClick={() => setOvertimeSecondsToday(0)} className="text-[9px] px-1.5 py-0.5 bg-red-500/10 rounded text-red-500 hover:bg-red-500/20 ml-1">归零</button>
                    </div>
                    <div className="text-[10px] text-tertiary font-mono">
-                     {t('≈ 损失')} <span className="text-red-500 font-semibold text-[12px]">{sym}{hide(formatMoney(overtimeLoss / ex))}</span>
+                     ≈ 损失 <span className="text-red-500 font-semibold text-[12px]">{sym}{hide(formatMoney(overtimeLoss / ex))}</span>
                    </div>
                 </div>
                 
@@ -2071,7 +2067,7 @@ export default function App() {
                   }`}
                   onClick={() => setIsOvertime(!isOvertime)}
                 >
-                   {isOvertime ? t('正在加班中...') : t('开始加班')}
+                   {isOvertime ? '正在加班中...' : '开始加班'}
                 </button>
              </div>
 
@@ -2079,7 +2075,7 @@ export default function App() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full"></div>
                 <div className="flex items-center gap-2 mb-1 z-10">
                    <div className="w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-xs">🤖</div>
-                   <span className="text-xs text-purple-300 font-medium">{t('一键生成摸鱼话术')}</span>
+                   <span className="text-xs text-purple-300 font-medium">一键生成摸鱼话术</span>
                 </div>
                 <div className="bg-card-inner p-3 rounded-xl border border-app min-h-[60px] text-[13px] text-primary z-10 font-medium leading-relaxed shadow-inner break-words">
                    "{excuse}"
@@ -2088,8 +2084,8 @@ export default function App() {
                   onClick={generateExcuse}
                   className="w-full py-2.5 mt-1 rounded-xl bg-card-inner hover:bg-app border border-app text-[11px] text-secondary font-bold transition-colors z-10"
                 >
-                   {t('换个借口被老板抓到了')}
-                                              </button>
+                   换个借口被老板抓到了
+                </button>
              </div>
           </div>
         </div>
@@ -2099,8 +2095,8 @@ export default function App() {
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 py-6 space-y-4 pb-24 max-w-5xl mx-auto w-full">
            <div className="flex items-center justify-between mb-4">
               <div>
-                 <h2 className="text-xl font-bold text-primary mb-1">{t('牛马数据中心')}</h2>
-                 <p className="text-xs text-tertiary">{t('掌握进度，合理规划摸鱼与离职时刻。')}</p>
+                 <h2 className="text-xl font-bold text-primary mb-1">牛马数据中心</h2>
+                 <p className="text-xs text-tertiary">掌握进度，合理规划摸鱼与离职时刻。</p>
               </div>
               <div className="flex items-center gap-2">
                  <button onClick={() => setShowUSD(!showUSD)} className={`text-[10px] px-2 py-1 rounded border transition-colors ${showUSD ? 'border-brand text-brand' : 'border-app-strong text-secondary hover:text-primary'}`}>USD</button>
@@ -2114,7 +2110,7 @@ export default function App() {
              <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full pointer-events-none"></div>
              
              <div>
-                <h3 className="text-sm font-semibold text-primary">{t('本月搞钱进度')}</h3>
+                <h3 className="text-sm font-semibold text-primary">本月搞钱进度</h3>
                 <div className="flex items-end gap-2 mt-2">
                    <span className="text-3xl font-mono text-brand font-bold tracking-tight">{sym} {hide(formatMoney(earnedThisMonth / ex))}</span>
                    <span className="text-xs text-tertiary mb-1.5 font-mono">/ {sym} {hide(formatMoney(config.monthlySalary / ex))}</span>
@@ -2123,35 +2119,35 @@ export default function App() {
                    <div className="h-full bg-gradient-to-r from-teal-500 to-[#00FF41] rounded-full shadow-[0_0_10px_rgba(0,255,65,0.5)]" style={{ width: `${Math.min(100, (earnedThisMonth / config.monthlySalary) * 100)}%` }} />
                 </div>
                 <div className="flex justify-between text-[10px] text-tertiary mt-2 font-mono">
-                   <span>{t('已结算进度:')} {((earnedThisMonth / config.monthlySalary) * 100).toFixed(2)}%</span>
-                   <span>{t('剩余:')} {sym} {hide(formatMoney((config.monthlySalary - earnedThisMonth) / ex))}</span>
+                   <span>已结算进度: {((earnedThisMonth / config.monthlySalary) * 100).toFixed(2)}%</span>
+                   <span>剩余: {sym} {hide(formatMoney((config.monthlySalary - earnedThisMonth) / ex))}</span>
                 </div>
              </div>
 
              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-app relative z-10">
                 <div className="bg-card-inner p-3 rounded-xl border border-app flex flex-col justify-center shadow-inner">
-                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><TrendingUp size={10} /> {t('历史总计总收入估算')}</div>
+                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><TrendingUp size={10} /> 历史总计总收入估算</div>
                    <div className="text-sm font-mono text-primary tracking-tight">{sym} {hide(formatMoney((totalEarnedBeforeToday + earnedThisMonth) / ex))}</div>
                 </div>
                 <div className="bg-card-inner p-3 rounded-xl border border-app flex flex-col justify-center shadow-inner">
-                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><Briefcase size={10} /> {t('累计奉献青春天数')}</div>
-                   <div className="text-sm font-mono text-primary">{Math.floor(monthsWorked * currentMonthWorkDays + localTime.getDate())} {t('天')}</div>
+                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><Briefcase size={10} /> 累计奉献青春天数</div>
+                   <div className="text-sm font-mono text-primary">{Math.floor(monthsWorked * currentMonthWorkDays + localTime.getDate())} 天</div>
                 </div>
                 <div className="bg-card-inner p-3 rounded-xl border border-brand/10 flex flex-col justify-center shadow-inner">
-                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🐟</span> {t('本月摸鱼总收益')}</div>
+                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🐟</span> 本月摸鱼总收益</div>
                    <div className="text-sm font-mono text-brand font-bold">{sym} {hide(formatMoney((slackLoss * (localTime.getDate() * 0.7)) / ex))}</div>
                 </div>
                 <div className="bg-card-inner p-3 rounded-xl border border-red-500/10 flex flex-col justify-center shadow-inner">
-                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🏢</span> {t('本月义务加班送钱')}</div>
+                   <div className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🏢</span> 本月义务加班送钱</div>
                    <div className="text-sm font-mono text-red-500 font-bold">{sym} {hide(formatMoney((overtimeLoss * (localTime.getDate() * 0.8)) / ex))}</div>
                 </div>
                 <div className="col-span-2 bg-gradient-to-r from-card to-card-inner p-3 rounded-xl border border-app flex justify-between items-center shadow-sm">
                    <div className="flex flex-col">
-                      <div className="text-[10px] text-tertiary flex items-center gap-1 mb-0.5">{t('💰 精确时薪折算')}</div>
-                      <div className="text-sm font-mono text-primary">{sym} {hide(formatMoney(hourlyRate / ex))} <span className="text-[9px] text-secondary">{t('/小时')}</span></div>
+                      <div className="text-[10px] text-tertiary flex items-center gap-1 mb-0.5">💰 精确时薪折算</div>
+                      <div className="text-sm font-mono text-primary">{sym} {hide(formatMoney(hourlyRate / ex))} <span className="text-[9px] text-secondary">/小时</span></div>
                    </div>
                    <div className="flex flex-col text-right">
-                      <div className="text-[10px] text-tertiary flex justify-end items-center gap-1 mb-0.5">{t('👑 全国牛马击败率')}</div>
+                      <div className="text-[10px] text-tertiary flex justify-end items-center gap-1 mb-0.5">👑 全国牛马击败率</div>
                       <div className="text-sm font-mono text-brand">{Math.min(99.9, Math.max(1.0, (config.monthlySalary / 10000) * 80)).toFixed(1)}%</div>
                    </div>
                 </div>
@@ -2161,17 +2157,17 @@ export default function App() {
            {/* REIMBURSEMENTS SECTION */}
            <div className="bg-card rounded-2xl p-5 border border-app shadow-xl space-y-4 relative overflow-hidden mt-4">
                <div className="flex justify-between items-center mb-1">
-                  <h3 className="text-sm font-semibold text-primary">{t('🧾 报销记录 (本月)')}</h3>
-                  <button onClick={() => setShowExportModal(true)} className="text-xs text-brand hover:underline">{t('导出/汇总')}</button>
+                  <h3 className="text-sm font-semibold text-primary">🧾 报销记录 (本月)</h3>
+                  <button onClick={() => setShowExportModal(true)} className="text-xs text-brand hover:underline">导出/汇总</button>
                </div>
                
                {/* Add New */}
                <div className="bg-card-inner p-3 rounded-xl border border-app space-y-3">
-                  <div className="text-[10px] text-tertiary">{t('记录今日报销')}</div>
+                  <div className="text-[10px] text-tertiary">记录今日报销</div>
                   <div className="flex gap-2">
                      <input 
                         type="text"
-                        placeholder={t('项目说明...')}
+                        placeholder="项目说明..."
                         value={newReimbDesc}
                         onChange={e => setNewReimbDesc(e.target.value)}
                         className="flex-1 bg-card border border-app rounded-lg px-2 py-1.5 text-xs text-primary focus:outline-none focus:border-brand"
@@ -2179,7 +2175,7 @@ export default function App() {
                      <div className="flex w-[120px]">
                         <input 
                            type="number"
-                           placeholder={t('金额')}
+                           placeholder="金额"
                            value={newReimbAmount}
                            onChange={e => setNewReimbAmount(e.target.value)}
                            className="w-full bg-card border border-app border-r-0 rounded-l-lg px-2 py-1.5 text-xs text-primary focus:outline-none focus:border-brand"
@@ -2198,7 +2194,7 @@ export default function App() {
                   </div>
                   <button 
                      onClick={() => {
-                        if (!newReimbDesc || !newReimbAmount) return setToast({ message: t('请输入说明和金额'), type: 'warn' });
+                        if (!newReimbDesc || !newReimbAmount) return setToast({ message: '请输入说明和金额', type: 'warn' });
                         const newItem = {
                            id: Date.now().toString(),
                            date: new Intl.DateTimeFormat('en-CA', { 
@@ -2217,12 +2213,12 @@ export default function App() {
                         });
                         setNewReimbDesc('');
                         setNewReimbAmount('');
-                        setToast({ message: t('已添加报销记录'), type: 'info' });
+                        setToast({ message: '已添加报销记录', type: 'info' });
                      }}
                      className="w-full py-2 bg-brand/10 text-brand border border-brand/20 text-xs font-bold rounded-lg hover:bg-brand/20 transition-colors"
                   >
-                     {t('+ 记一笔')}
-                                                </button>
+                     + 记一笔
+                  </button>
                </div>
 
                {/* List latest 3 */}
@@ -2253,9 +2249,9 @@ export default function App() {
            {showExportModal && (
               <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
                  <div className="bg-card border border-app rounded-2xl p-5 shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto">
-                    <h3 className="text-lg font-bold text-primary mb-4">{t('本月报销汇总计算')}</h3>
+                    <h3 className="text-lg font-bold text-primary mb-4">本月报销汇总计算</h3>
                     <div className="space-y-3 mb-6">
-                       <label className="text-xs text-secondary font-medium">{t('汇率设定 (转换为人民币)')}</label>
+                       <label className="text-xs text-secondary font-medium">汇率设定 (转换为人民币)</label>
                        <div className="flex items-center justify-between text-xs bg-card-inner p-2 rounded-lg">
                           <span className="text-tertiary">1 USD =</span>
                           <input type="number" step="0.01" value={exportRates.USD_TO_CNY} onChange={e => setExportRates({...exportRates, USD_TO_CNY: Number(e.target.value)})} className="bg-card border border-app rounded w-20 px-2 py-1 outline-none text-primary" />
@@ -2272,22 +2268,22 @@ export default function App() {
 
                     <div className="border-t border-app pt-4 mb-6">
                        <div className="flex justify-between items-center mb-2">
-                         <div className="text-xs text-secondary font-medium">{t('汇总结果')}</div>
+                         <div className="text-xs text-secondary font-medium">汇总结果</div>
                          <button 
                             onClick={async () => {
                                const thisMonth = (config.reimbursements || []).filter((r: any) => r.date.startsWith(`${localTime.getFullYear()}-${(localTime.getMonth() + 1).toString().padStart(2, '0')}`));
                                const text = thisMonth.map(r => `${r.date} | ${r.desc} | ${r.amount} ${r.currency}`).join('\n');
                                try {
                                   await navigator.clipboard.writeText(text);
-                                  setToast({ message: t('已复制报销明细'), type: 'info' });
+                                  setToast({ message: '已复制报销明细', type: 'info' });
                                } catch(e) {
-                                  setToast({ message: t('复制失败'), type: 'warn' });
+                                  setToast({ message: '复制失败', type: 'warn' });
                                }
                             }}
                             className="text-[10px] text-brand hover:underline"
                          >
-                            {t('复制明细')}
-                                                                   </button>
+                            复制明细
+                         </button>
                        </div>
                        {(() => {
                           const thisMonth = (config.reimbursements || []).filter((r: any) => r.date.startsWith(`${localTime.getFullYear()}-${(localTime.getMonth() + 1).toString().padStart(2, '0')}`));
@@ -2302,11 +2298,11 @@ export default function App() {
                           return (
                              <div className="space-y-2">
                                 <div className="bg-brand/10 text-brand p-3 rounded-xl border border-brand/20 flex flex-col">
-                                   <span className="text-[10px] opacity-80 mb-1">{t('总计 (CNY)')}</span>
+                                   <span className="text-[10px] opacity-80 mb-1">总计 (CNY)</span>
                                    <span className="text-xl font-bold font-mono">¥ {totalCNY.toFixed(2)}</span>
                                 </div>
                                 <div className="bg-card-inner text-primary p-3 rounded-xl border border-app flex flex-col">
-                                   <span className="text-[10px] text-tertiary mb-1">{t('等值美元 (USD)')}</span>
+                                   <span className="text-[10px] text-tertiary mb-1">等值美元 (USD)</span>
                                    <span className="text-md font-bold font-mono">$ {totalUSD.toFixed(2)}</span>
                                 </div>
                                 <div className="text-[10px] text-tertiary max-h-32 overflow-y-auto mt-2">
@@ -2322,7 +2318,7 @@ export default function App() {
                        })()}
                     </div>
 
-                    <button onClick={() => setShowExportModal(false)} className="w-full py-2.5 rounded-xl border border-app-strong text-xs font-bold text-secondary hover:bg-card-inner hover:text-primary transition-colors">{t('关闭')}</button>
+                    <button onClick={() => setShowExportModal(false)} className="w-full py-2.5 rounded-xl border border-app-strong text-xs font-bold text-secondary hover:bg-card-inner hover:text-primary transition-colors">关闭</button>
                  </div>
               </div>
            )}
@@ -2333,23 +2329,23 @@ export default function App() {
       {activeTab === 'profile' && (
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 py-8 space-y-4 pb-24 max-w-5xl mx-auto w-full">
            <div className="flex items-center justify-between mb-2">
-             <h2 className="text-xl font-bold text-primary">{t('牛马设置中心')}</h2>
+             <h2 className="text-xl font-bold text-primary">牛马设置中心</h2>
              
            </div>
-           <p className="text-xs text-secondary mb-4">{t('精准的参数才能算出精准的摸鱼收益。')}</p>
+           <p className="text-xs text-secondary mb-4">精准的参数才能算出精准的摸鱼收益。</p>
            
            <div className="bg-brand/5 border border-brand/20 rounded-2xl p-4 mb-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center text-brand shrink-0">
                  <RefreshCw size={20} />
               </div>
               <div className="flex-1">
-                 <p className="text-xs font-bold text-brand mb-0.5">{t('隐私保护')}</p>
-                 <p className="text-[10px] text-secondary">{t('你的时间有价值，你的数据也一样。所有信息仅存于本地，收入只有你自己知道。')}</p>
+                 <p className="text-xs font-bold text-brand mb-0.5">隐私保护</p>
+                 <p className="text-[10px] text-secondary">你的时间有价值，你的数据也一样。所有信息仅存于本地，收入只有你自己知道。</p>
               </div>
            </div>
            <div className="bg-card rounded-2xl p-5 border border-app space-y-5 shadow-lg">
               <div>
-                 <label className="text-xs text-secondary mb-1.5 block">{t('每月税后薪资 (人民币)')}</label>
+                 <label className="text-xs text-secondary mb-1.5 block">每月税后薪资 (人民币)</label>
                  <input type="number" 
                    className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-brand font-mono text-base focus:border-brand focus:outline-none transition-colors"
                    value={config.monthlySalary === 0 ? '' : config.monthlySalary}
@@ -2358,32 +2354,32 @@ export default function App() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t('公共假期地区')}</label>
+                    <label className="text-xs text-secondary mb-1.5 block">公共假期地区</label>
                     <select 
                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary text-base focus:border-brand focus:outline-none transition-colors"
                       value={config.holidayRegion}
                       onChange={e => setConfig({...config, holidayRegion: e.target.value})}
                     >
-                      <option value="CN">{t('🇨🇳 中国内地')}</option>
-                      <option value="HK">{t('🇭🇰 中国香港')}</option>
-                      <option value="TH">{t('🇹🇭 泰国')}</option>
-                      <option value="VN">{t('🇻🇳 越南')}</option>
+                      <option value="CN">🇨🇳 中国内地</option>
+                      <option value="HK">🇭🇰 中国香港</option>
+                      <option value="TH">🇹🇭 泰国</option>
+                      <option value="VN">🇻🇳 越南</option>
                     </select>
                  </div>
                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t('休息日设置')}</label>
+                    <label className="text-xs text-secondary mb-1.5 block">休息日设置</label>
                     <select 
                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary text-base focus:border-brand focus:outline-none transition-colors"
                       value={config.restDays}
                       onChange={e => setConfig({...config, restDays: Number(e.target.value)})}
                     >
-                      <option value={2}>{t('双休 (周末)')}</option>
-                      <option value={1}>{t('单休 (周日)')}</option>
+                      <option value={2}>双休 (周末)</option>
+                      <option value={1}>单休 (周日)</option>
                     </select>
                  </div>
               </div>
               <div>
-                 <label className="text-xs text-secondary mb-1.5 block">{t('每日工作时长 (小时)')} <span className="text-[10px] opacity-60 ml-1">{t('自动计算')}</span></label>
+                 <label className="text-xs text-secondary mb-1.5 block">每日工作时长 (小时) <span className="text-[10px] opacity-60 ml-1">自动计算</span></label>
                  <div
                    className="w-full flex items-center bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] text-primary font-mono text-base opacity-70"
                  >
@@ -2392,7 +2388,7 @@ export default function App() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t('发薪日 (每月X号)')}</label>
+                    <label className="text-xs text-secondary mb-1.5 block">发薪日 (每月X号)</label>
                     <input type="number" 
                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary font-mono text-base focus:border-brand focus:outline-none transition-colors"
                       value={config.payday === 0 ? '' : config.payday}
@@ -2400,7 +2396,7 @@ export default function App() {
                     />
                  </div>
                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t('入职时间')}</label>
+                    <label className="text-xs text-secondary mb-1.5 block">入职时间</label>
                     <input type="date"
                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary font-mono text-base focus:border-brand focus:outline-none transition-colors"
                       value={config.joinDate}
@@ -2410,7 +2406,7 @@ export default function App() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t('首次发薪时间')}</label>
+                    <label className="text-xs text-secondary mb-1.5 block">首次发薪时间</label>
                     <input type="date"
                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary font-mono text-base focus:border-brand focus:outline-none transition-colors"
                       value={config.firstPayDate || config.joinDate}
@@ -2418,7 +2414,7 @@ export default function App() {
                     />
                  </div>
                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t('汇率 (USD/CNY)')}</label>
+                    <label className="text-xs text-secondary mb-1.5 block">汇率 (USD/CNY)</label>
                     <input type="number" step="0.01"
                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary font-mono text-base focus:border-brand focus:outline-none transition-colors"
                       value={config.exchangeRateUsd === 0 ? '' : config.exchangeRateUsd}
@@ -2427,21 +2423,21 @@ export default function App() {
                  </div>
               </div>
               <div>
-                 <label className="text-xs text-secondary mb-1.5 block">{t('牛马个性化形象')}</label>
+                 <label className="text-xs text-secondary mb-1.5 block">牛马个性化形象</label>
                  <select 
                    className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-base focus:border-brand focus:outline-none transition-colors"
                    value={config.avatarTheme || 'default'}
                    onChange={e => setConfig({...config, avatarTheme: e.target.value})}
                  >
-                   <option value="default">{t('默认牛马 🐮')}</option>
-                   <option value="cyberpunk">{t('赛博朋克 🤖')}</option>
-                   <option value="retro">{t('复古像素 👾')}</option>
-                   <option value="classic">{t('经典马儿 🐴')}</option>
+                   <option value="default">默认牛马 🐮</option>
+                   <option value="cyberpunk">赛博朋克 🤖</option>
+                   <option value="retro">复古像素 👾</option>
+                   <option value="classic">经典马儿 🐴</option>
                  </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t('上班时间')}</label>
+                    <label className="text-xs text-secondary mb-1.5 block">上班时间</label>
                     <input type="time"
                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary font-mono text-base focus:border-brand focus:outline-none transition-colors"
                       value={config.startTime}
@@ -2449,7 +2445,7 @@ export default function App() {
                     />
                  </div>
                  <div>
-                    <label className="text-xs text-secondary mb-1.5 block">{t('下班时间')}</label>
+                    <label className="text-xs text-secondary mb-1.5 block">下班时间</label>
                     <input type="time"
                       className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary font-mono text-base focus:border-brand focus:outline-none transition-colors"
                       value={config.endTime}
@@ -2458,7 +2454,7 @@ export default function App() {
                  </div>
               </div>
               <div className="flex items-center justify-between pb-1 mt-4">
-                 <span className="text-sm font-medium text-primary">{t('是否有午休时长')}</span>
+                 <span className="text-sm font-medium text-primary">是否有午休时长</span>
                  <button 
                    className={`w-12 h-6 rounded-full p-1 transition-colors relative ${config.hasLunchBreak ? 'bg-brand' : 'bg-gray-700'}`}
                    onClick={() => setConfig({...config, hasLunchBreak: !config.hasLunchBreak})}
@@ -2469,7 +2465,7 @@ export default function App() {
               {config.hasLunchBreak && (
                 <div className="grid grid-cols-2 gap-4">
                    <div>
-                      <label className="text-xs text-secondary mb-1.5 block flex items-center gap-1"><span className="text-[10px]">🍚</span> {t('午休开始')}</label>
+                      <label className="text-xs text-secondary mb-1.5 block flex items-center gap-1"><span className="text-[10px]">🍚</span> 午休开始</label>
                       <input type="time"
                         className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary font-mono text-base focus:border-brand focus:outline-none transition-colors"
                         value={config.lunchStartTime}
@@ -2477,7 +2473,7 @@ export default function App() {
                       />
                    </div>
                    <div>
-                      <label className="text-xs text-secondary mb-1.5 block flex items-center gap-1"><span className="text-[10px]">💼</span> {t('午休结束')}</label>
+                      <label className="text-xs text-secondary mb-1.5 block flex items-center gap-1"><span className="text-[10px]">💼</span> 午休结束</label>
                       <input type="time"
                         className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary font-mono text-base focus:border-brand focus:outline-none transition-colors"
                         value={config.lunchEndTime}
@@ -2488,14 +2484,14 @@ export default function App() {
               )}
               <hr className="border-app my-2" />
               <div className="flex items-center justify-between">
-                 <label className="text-xs text-secondary font-medium block">{t('自定义倒计时记录')}</label>
+                 <label className="text-xs text-secondary font-medium block">自定义倒计时记录</label>
                  <button 
                    onClick={() => setConfig({
                      ...config, 
-                     customEvents: [...(config.customEvents || []), { id: Math.random().toString(), name: t('新事件'), date: new Date().toISOString().split('T')[0], color: 'purple' }]
+                     customEvents: [...(config.customEvents || []), { id: Math.random().toString(), name: '新事件', date: new Date().toISOString().split('T')[0], color: 'purple' }]
                    })}
                    className="text-xs text-brand border border-brand/30 px-3 py-1 rounded-full hover:bg-brand/10 transition-colors"
-                 >{t('添加 +')}</button>
+                 >添加 +</button>
               </div>
               <div className="space-y-4">
                  {(config.customEvents || []).map((evt: any, i: number) => (
@@ -2509,7 +2505,7 @@ export default function App() {
                        ><span className="text-xs">×</span></button>
                        <div className="grid grid-cols-2 gap-3">
                           <div>
-                             <label className="text-[10px] text-tertiary mb-1 block">{t('名称')}</label>
+                             <label className="text-[10px] text-tertiary mb-1 block">名称</label>
                              <input type="text"
                                className="w-full appearance-none m-0 bg-card border border-app rounded-lg px-2 h-[36px] box-border text-[13px] text-primary focus:border-brand focus:outline-none"
                                value={evt.name}
@@ -2521,7 +2517,7 @@ export default function App() {
                              />
                           </div>
                           <div>
-                             <label className="text-[10px] text-tertiary mb-1 block">{t('颜色')}</label>
+                             <label className="text-[10px] text-tertiary mb-1 block">颜色</label>
                              <select
                                className="w-full appearance-none m-0 bg-card border border-app rounded-lg px-2 h-[36px] box-border text-[13px] text-primary focus:border-brand focus:outline-none"
                                value={evt.color}
@@ -2531,17 +2527,17 @@ export default function App() {
                                  setConfig({...config, customEvents: updated});
                                }}
                              >
-                                <option value="purple">{t('紫色')}</option>
-                                <option value="amber">{t('橙色')}</option>
-                                <option value="red">{t('红色')}</option>
-                                <option value="green">{t('绿色')}</option>
-                                <option value="yellow">{t('黄色')}</option>
-                                <option value="blue">{t('蓝色')}</option>
+                                <option value="purple">紫色</option>
+                                <option value="amber">橙色</option>
+                                <option value="red">红色</option>
+                                <option value="green">绿色</option>
+                                <option value="yellow">黄色</option>
+                                <option value="blue">蓝色</option>
                              </select>
                           </div>
                        </div>
                        <div>
-                          <label className="text-[10px] text-tertiary mb-1 block">{t('日期')}</label>
+                          <label className="text-[10px] text-tertiary mb-1 block">日期</label>
                           <input type="date"
                             className="w-full appearance-none m-0 bg-card border border-app rounded-lg px-3 h-[36px] block box-border text-primary font-mono text-sm focus:border-brand focus:outline-none"
                             value={evt.date}
@@ -2556,13 +2552,13 @@ export default function App() {
                  ))}
                  {(!config.customEvents || config.customEvents.length === 0) && (
                     <div className="text-center py-6 text-tertiary text-xs bg-card-inner/30 rounded-xl border border-app border-dashed">
-                      {t('暂无自定义记录')}
-                                                      </div>
+                      暂无自定义记录
+                    </div>
                  )}
               </div>
 
               <div>
-                 <label className="text-xs text-secondary mb-1.5 block">{t('预期退休日期')}</label>
+                 <label className="text-xs text-secondary mb-1.5 block">预期退休日期</label>
                  <input type="date"
                    className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary font-mono text-base focus:border-brand focus:outline-none transition-colors"
                    value={config.retirementDate}
@@ -2573,12 +2569,12 @@ export default function App() {
 
            <div className="bg-card rounded-2xl p-5 md:p-8 lg:p-10 border border-app space-y-4 shadow-lg max-w-4xl mx-auto mb-4">
                <div>
-                  <h3 className="text-sm font-bold text-primary mb-1">{t('循环提醒功能')}</h3>
-                  <p className="text-xs text-secondary mb-4">{t('后台稳定运行的定时提醒（如喝水/站立）。')}</p>
+                  <h3 className="text-sm font-bold text-primary mb-1">循环提醒功能</h3>
+                  <p className="text-xs text-secondary mb-4">后台稳定运行的定时提醒（如喝水/站立）。</p>
                </div>
                <div className="grid grid-cols-2 gap-4">
                   <div>
-                     <label className="text-xs text-secondary mb-1.5 block">{t('提醒间隔 (分钟)')}</label>
+                     <label className="text-xs text-secondary mb-1.5 block">提醒间隔 (分钟)</label>
                      <input type="number" 
                        className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-brand font-mono text-base focus:border-brand focus:outline-none transition-colors"
                        value={reminderMins}
@@ -2590,7 +2586,7 @@ export default function App() {
                      />
                   </div>
                   <div>
-                     <label className="text-xs text-secondary mb-1.5 block">{t('提醒内容')}</label>
+                     <label className="text-xs text-secondary mb-1.5 block">提醒内容</label>
                      <input type="text" 
                        className="w-full bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary font-sans text-sm focus:border-brand focus:outline-none transition-colors"
                        value={reminderText}
@@ -2610,18 +2606,18 @@ export default function App() {
                  }}
                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all shadow-lg ${isReminderActive ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-brand text-[#141414]'}`}
                >
-                 {isReminderActive ? `停止提醒 (剩余 ${Math.floor(reminderTimeLeft / 60)} 分钟)` : t('开启提醒')}
+                 {isReminderActive ? `停止提醒 (剩余 ${Math.floor(reminderTimeLeft / 60)} 分钟)` : '开启提醒'}
                </button>
            </div>
 
            <div className="bg-card rounded-2xl p-5 md:p-8 lg:p-10 border border-app space-y-4 shadow-lg max-w-4xl mx-auto mb-4">
                <div>
-                  <h3 className="text-sm font-bold text-primary mb-1">{t('提示音设置')}</h3>
-                  <p className="text-xs text-secondary mb-4">{t('设定番茄钟与提醒的提示音。')}</p>
+                  <h3 className="text-sm font-bold text-primary mb-1">提示音设置</h3>
+                  <p className="text-xs text-secondary mb-4">设定番茄钟与提醒的提示音。</p>
                </div>
                <div className="grid grid-cols-3 gap-4">
                   <div>
-                     <label className="text-xs text-secondary mb-1.5 block">{t('番茄钟开始')}</label>
+                     <label className="text-xs text-secondary mb-1.5 block">番茄钟开始</label>
                      <select 
                        className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-sm focus:border-brand focus:outline-none transition-colors"
                        value={config.pomodoroStartSound}
@@ -2630,15 +2626,15 @@ export default function App() {
                          if(e.target.value !== 'none') playAlertSound(e.target.value);
                        }}
                      >
-                       <option value="none">{t('无')}</option>
-                       <option value="beep">{t('短促 (Beep)')}</option>
-                       <option value="bell">{t('清脆 (Bell)')}</option>
-                       <option value="chime">{t('和弦 (Chime)')}</option>
-                       <option value="digital">{t('电子 (Digital)')}</option>
+                       <option value="none">无</option>
+                       <option value="beep">短促 (Beep)</option>
+                       <option value="bell">清脆 (Bell)</option>
+                       <option value="chime">和弦 (Chime)</option>
+                       <option value="digital">电子 (Digital)</option>
                      </select>
                   </div>
                   <div>
-                     <label className="text-xs text-secondary mb-1.5 block">{t('番茄钟结束')}</label>
+                     <label className="text-xs text-secondary mb-1.5 block">番茄钟结束</label>
                      <select 
                        className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-sm focus:border-brand focus:outline-none transition-colors"
                        value={config.pomodoroEndSound}
@@ -2647,15 +2643,15 @@ export default function App() {
                          if(e.target.value !== 'none') playAlertSound(e.target.value);
                        }}
                      >
-                       <option value="none">{t('无')}</option>
-                       <option value="beep">{t('短促 (Beep)')}</option>
-                       <option value="bell">{t('清脆 (Bell)')}</option>
-                       <option value="chime">{t('和弦 (Chime)')}</option>
-                       <option value="digital">{t('电子 (Digital)')}</option>
+                       <option value="none">无</option>
+                       <option value="beep">短促 (Beep)</option>
+                       <option value="bell">清脆 (Bell)</option>
+                       <option value="chime">和弦 (Chime)</option>
+                       <option value="digital">电子 (Digital)</option>
                      </select>
                   </div>
                   <div>
-                     <label className="text-xs text-secondary mb-1.5 block">{t('提醒/休息结束')}</label>
+                     <label className="text-xs text-secondary mb-1.5 block">提醒/休息结束</label>
                      <select 
                        className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border text-primary text-sm focus:border-brand focus:outline-none transition-colors"
                        value={config.pomodoroBreakSound}
@@ -2664,11 +2660,11 @@ export default function App() {
                          if(e.target.value !== 'none') playAlertSound(e.target.value);
                        }}
                      >
-                       <option value="none">{t('无')}</option>
-                       <option value="beep">{t('短促 (Beep)')}</option>
-                       <option value="bell">{t('清脆 (Bell)')}</option>
-                       <option value="chime">{t('和弦 (Chime)')}</option>
-                       <option value="digital">{t('电子 (Digital)')}</option>
+                       <option value="none">无</option>
+                       <option value="beep">短促 (Beep)</option>
+                       <option value="bell">清脆 (Bell)</option>
+                       <option value="chime">和弦 (Chime)</option>
+                       <option value="digital">电子 (Digital)</option>
                      </select>
                   </div>
                </div>
@@ -2677,10 +2673,10 @@ export default function App() {
            <div className="bg-card rounded-2xl p-5 md:p-8 lg:p-10 border border-app space-y-5 shadow-lg max-w-4xl mx-auto mb-4">
              
                  <div className="pt-4 border-t border-app-strong"></div>
-                 <h3 className="text-sm font-bold text-primary mb-2">{t('自定义购买力换算')}</h3>
+                 <h3 className="text-sm font-bold text-primary mb-2">自定义购买力换算</h3>
                  <div className="grid grid-cols-2 gap-3">
                    <div>
-                      <label className="text-xs text-secondary mb-1.5 block">{t('自定义物品名称')}</label>
+                      <label className="text-xs text-secondary mb-1.5 block">自定义物品名称</label>
                       <input type="text" 
                         className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary text-base focus:border-brand focus:outline-none transition-colors"
                         value={config.customItemName}
@@ -2688,7 +2684,7 @@ export default function App() {
                       />
                    </div>
                    <div>
-                      <label className="text-xs text-secondary mb-1.5 block">{t('金额 (人民币)')}</label>
+                      <label className="text-xs text-secondary mb-1.5 block">金额 (人民币)</label>
                       <input type="number" 
                         className="w-full appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-brand font-mono text-base focus:border-brand focus:outline-none transition-colors"
                         value={config.customItemPrice === 0 ? '' : config.customItemPrice}
@@ -2702,10 +2698,10 @@ export default function App() {
            
            
            <div className="bg-card rounded-2xl p-5 border border-app space-y-4 shadow-lg mt-4">
-              <h3 className="text-sm font-bold text-primary mb-2">{t('配置方案保存')}</h3>
+              <h3 className="text-sm font-bold text-primary mb-2">配置方案保存</h3>
               <div className="flex gap-2 items-center">
                  <input type="text"
-                   placeholder={t('输入方案名称，例如: 方案一线城市')}
+                   placeholder="输入方案名称，例如: 方案一线城市"
                    className="flex-1 appearance-none m-0 bg-card-inner border border-app-strong rounded-xl px-3 h-[44px] block box-border placeholder:text-secondary/50 text-primary text-base focus:border-brand focus:outline-none transition-colors"
                    value={currentProfileName}
                    onChange={e => setCurrentProfileName(e.target.value)}
@@ -2718,15 +2714,15 @@ export default function App() {
                      setCurrentProfileName('');
                    }}
                    className="px-4 py-2 bg-brand text-app font-bold rounded-xl whitespace-nowrap hover:bg-brand-hover"
-                 >{t('保存当前')}</button>
+                 >保存当前</button>
               </div>
               {profiles.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {profiles.map(p => (
                     <div key={p.name} className="flex items-center bg-card-inner border border-app rounded-full px-3 py-1 text-xs">
                        <span className="text-primary mr-2">{p.name}</span>
-                       <button onClick={() => setConfig(p.config)} className="text-brand hover:underline mr-2">{t('载入')}</button>
-                       <button onClick={() => setProfiles(profiles.filter(x => x.name !== p.name))} className="text-red-500 hover:underline">{t('删除')}</button>
+                       <button onClick={() => setConfig(p.config)} className="text-brand hover:underline mr-2">载入</button>
+                       <button onClick={() => setProfiles(profiles.filter(x => x.name !== p.name))} className="text-red-500 hover:underline">删除</button>
                     </div>
                   ))}
                 </div>
@@ -2734,13 +2730,13 @@ export default function App() {
            </div>
 
            <div className="bg-card rounded-2xl p-5 md:p-8 lg:p-10 border border-brand/20 max-w-4xl mx-auto mt-4">
-              <h3 className="text-xs text-brand font-bold mb-3 uppercase tracking-wider">{t('实时时薪预估')}</h3>
+              <h3 className="text-xs text-brand font-bold mb-3 uppercase tracking-wider">实时时薪预估</h3>
               <div className="flex justify-between items-center text-sm mb-1">
-                 <span className="text-secondary">{t('时薪:')}</span>
+                 <span className="text-secondary">时薪:</span>
                  <span className="text-primary font-mono">¥ {hourlyRate.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                 <span className="text-secondary">{t('分钟薪:')}</span>
+                 <span className="text-secondary">分钟薪:</span>
                  <span className="text-primary font-mono">¥ {minuteRate.toFixed(2)}</span>
               </div>
            </div>
@@ -2760,8 +2756,8 @@ export default function App() {
            <div className="flex flex-col items-center justify-center min-h-full py-10">
              
              <div className="mb-8 w-full max-w-sm text-center">
-               <h2 className="text-2xl font-bold tracking-tight text-primary">{t('沉浸番茄钟')}</h2>
-               <p className="text-xs text-secondary mt-1 font-medium">{t('专注一炷香，干完去放飞')}</p>
+               <h2 className="text-2xl font-bold tracking-tight text-primary">沉浸番茄钟</h2>
+               <p className="text-xs text-secondary mt-1 font-medium">专注一炷香，干完去放飞</p>
              </div>
 
              <div className="w-full max-w-sm bg-card border border-app rounded-[32px] p-6 shadow-2xl relative flex flex-col items-center shrink-0">
@@ -2780,14 +2776,14 @@ export default function App() {
                       type="text" 
                       value={pomodoroTask}
                       onChange={(e) => setPomodoroTask(e.target.value)}
-                      placeholder={t('今日待办事项...')} 
+                      placeholder="今日待办事项..." 
                       className="w-full bg-card-inner border border-app rounded-xl p-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-brand shadow-inner text-primary placeholder:text-tertiary"
                     />
                  </div>
 
                  {/* Focus Income Tracker */}
                  <div className="mb-6 w-full max-w-[200px] flex flex-col items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-brand/5 to-transparent border border-brand/10 relative z-10">
-                   <span className="text-[10px] text-tertiary mb-1">{t('本次专注已赚取')}</span>
+                   <span className="text-[10px] text-tertiary mb-1">本次专注已赚取</span>
                    <span className="text-xl font-mono font-bold text-brand shadow-sm">
                      ¥{formatMoney(((pomodoroLength * 60 - pomodoroTimeLeft) / 60) * minuteRate)}
                    </span>
@@ -2801,8 +2797,8 @@ export default function App() {
                          className="px-10 py-5 bg-brand text-[#141414] rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(0,255,65,0.4)] hover:scale-105 active:scale-95 transition-all text-lg font-black"
                        >
                          <Play size={24} className="mr-3 fill-current" />
-                         {t('开始专注')}
-                                                             </button>
+                         开始专注
+                       </button>
                     ) : (
                        <div className="flex gap-4">
                          <button 
@@ -2810,17 +2806,17 @@ export default function App() {
                            className="px-8 py-4 bg-brand text-[#141414] rounded-2xl flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all font-bold"
                          >
                            {isPomodoroActive ? (
-                             <><Pause size={22} className="mr-2 fill-current" /> {t('暂停')}</>
+                             <><Pause size={22} className="mr-2 fill-current" /> 暂停</>
                            ) : (
-                             <><Play size={22} className="mr-2 fill-current" /> {t('继续')}</>
+                             <><Play size={22} className="mr-2 fill-current" /> 继续</>
                            )}
                          </button>
                          <button 
                            onClick={resetPomodoro} 
                            className="px-8 py-4 bg-card-inner border border-app text-red-500 rounded-2xl flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all font-bold"
                          >
-                           <Square size={22} className="mr-2 fill-current" /> {t('结束')}
-                                                                       </button>
+                           <Square size={22} className="mr-2 fill-current" /> 结束
+                         </button>
                        </div>
                     )}
                  </div>
@@ -2828,7 +2824,7 @@ export default function App() {
 
              <div className="w-full max-w-sm mt-8 space-y-6">
                  <div>
-                   <h3 className="text-sm font-bold text-primary mb-3">{t('燃烧时间的容器')}</h3>
+                   <h3 className="text-sm font-bold text-primary mb-3">燃烧时间的容器</h3>
                    <div className="grid grid-cols-5 gap-2">
                      {FOCUS_CONTAINERS.map(c => (
                         <button 
@@ -2846,20 +2842,20 @@ export default function App() {
 
                  <div>
                    <h3 className="text-sm font-bold text-primary mb-3 flex items-center justify-between">
-                     <span>{t('环境白噪音')}</span>
-                     <span className="text-[10px] text-tertiary">{t('可多选')}</span>
+                     <span>环境白噪音</span>
+                     <span className="text-[10px] text-tertiary">可多选</span>
                    </h3>
                    <div className="grid grid-cols-5 gap-2">
                      {[
-                       { id: 'rain', name: t('雨声'), emoji: '🌧️' },
-                       { id: 'fire', name: t('篝火'), emoji: '🔥' },
-                       { id: 'train', name: t('火车'), emoji: '🚂' },
-                       { id: 'ocean', name: t('海浪'), emoji: '🌊' },
-                       { id: 'birds', name: t('鸟鸣'), emoji: '🐦' },
-                       { id: 'wind', name: t('清风'), emoji: '🌬️' },
-                       { id: 'stream', name: t('溪流'), emoji: '🏞️' },
-                       { id: 'keyboard', name: t('键盘'), emoji: '⌨️' },
-                       { id: 'clock', name: t('钟表'), emoji: '🕰️' }
+                       { id: 'rain', name: '雨声', emoji: '🌧️' },
+                       { id: 'fire', name: '篝火', emoji: '🔥' },
+                       { id: 'train', name: '火车', emoji: '🚂' },
+                       { id: 'ocean', name: '海浪', emoji: '🌊' },
+                       { id: 'birds', name: '鸟鸣', emoji: '🐦' },
+                       { id: 'wind', name: '清风', emoji: '🌬️' },
+                       { id: 'stream', name: '溪流', emoji: '🏞️' },
+                       { id: 'keyboard', name: '键盘', emoji: '⌨️' },
+                       { id: 'clock', name: '钟表', emoji: '🕰️' }
                      ].map(bgm => {
                         const isActiveBg = activeBgms.includes(bgm.id);
                         return (
@@ -2887,8 +2883,8 @@ export default function App() {
 
              {completedPomodoros > 0 && (
                 <div className="mt-6 text-sm text-secondary flex items-center gap-2">
-                   {t('今日已集齐')} <span className="text-brand font-bold">{completedPomodoros}</span> {t('个番茄 🍅')}
-                                              </div>
+                   今日已集齐 <span className="text-brand font-bold">{completedPomodoros}</span> 个番茄 🍅
+                </div>
              )}
            </div>
         </div>
@@ -2924,11 +2920,11 @@ export default function App() {
         
         const getRegionName = (code: string) => {
           switch (code) {
-            case 'CN': return t('中国大陆');
-            case 'HK': return t('中国香港');
-            case 'TH': return t('泰国');
-            case 'VN': return t('越南');
-            default: return t('本地区');
+            case 'CN': return '中国大陆';
+            case 'HK': return '中国香港';
+            case 'TH': return '泰国';
+            case 'VN': return '越南';
+            default: return '本地区';
           }
         };
 
@@ -2938,11 +2934,11 @@ export default function App() {
               <button onClick={() => setActiveTab('home')} className="p-2 bg-card rounded-full border border-app text-primary">
                  <ChevronLeft size={18} />
               </button>
-              <span className="font-bold text-primary">{getRegionName(config.holidayRegion)}{t('工作日历')}</span>
+              <span className="font-bold text-primary">{getRegionName(config.holidayRegion)}工作日历</span>
               <div className="flex gap-2">
                  <button onClick={() => setCalendarDate(new Date())} className="px-3 py-1 bg-card rounded-full border border-app text-xs text-primary">
-                    {t('今')}
-                                             </button>
+                    今
+                 </button>
               </div>
            </div>
 
@@ -2952,10 +2948,11 @@ export default function App() {
                 className="p-2 bg-card-inner rounded-full border border-app text-brand hover:bg-app"
               ><ChevronLeft size={16} /></button>
               <div className="text-center">
-                 <div className="text-lg font-bold text-primary">{calendarDate.getFullYear()}{t('年')}{calendarDate.getMonth() + 1}{t('月')}</div>
-                  <div className="text-[10px] text-tertiary">
-                    {t('工作日:')} <span className="font-bold text-primary">{calWorkDays}</span>{t('天 | 休息日:')} <span className="font-bold text-primary">{calRestDays}</span>{t('天')}
-                  </div>
+                 <div className="text-lg font-bold text-primary">{calendarDate.getFullYear()}年{calendarDate.getMonth() + 1}月</div>
+                 <div className="text-[10px] text-tertiary">
+                   工作日: <span className="font-bold text-primary">{calWorkDays}</span>天 | 
+                   休息日: <span className="font-bold text-primary">{calRestDays}</span>天
+                 </div>
               </div>
               <button 
                  onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} 
@@ -2994,20 +2991,20 @@ export default function App() {
                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 blur-3xl rounded-full"></div>
                    
                    <div className="flex flex-col bg-card-inner p-3 rounded-xl border border-app justify-center mt-1">
-                      <span className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><TrendingUp size={10} /> {t('当月总收入')}</span>
+                      <span className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><TrendingUp size={10} /> 当月总收入</span>
                       <span className="text-lg font-mono font-bold text-brand">{sym}{hide(formatMoney(calEarned / ex))}</span>
                    </div>
                    <div className="flex flex-col bg-card-inner p-3 rounded-xl border border-app justify-center mt-1">
-                      <span className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">⏱️</span> {t('当月总工时')}</span>
-                      <span className="text-lg font-mono font-bold text-brand">{calHours.toFixed(1)} <span className="text-[10px] text-tertiary font-sans">{t('小时')}</span></span>
+                      <span className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">⏱️</span> 当月总工时</span>
+                      <span className="text-lg font-mono font-bold text-brand">{calHours.toFixed(1)} <span className="text-[10px] text-tertiary font-sans">小时</span></span>
                    </div>
 
                    <div className="flex flex-col bg-card-inner p-3 rounded-xl border border-brand/10 justify-center">
-                      <span className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🐟</span> {t('月度摸鱼估值')}</span>
+                      <span className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🐟</span> 月度摸鱼估值</span>
                       <span className="text-sm font-mono font-bold text-brand">{sym}{hide(formatMoney(calSlack / ex))}</span>
                    </div>
                    <div className="flex flex-col bg-card-inner p-3 rounded-xl border border-red-500/10 justify-center">
-                      <span className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🏢</span> {t('月度加班损失')}</span>
+                      <span className="text-[10px] text-tertiary mb-1 flex items-center gap-1"><span className="text-[10px]">🏢</span> 月度加班损失</span>
                       <span className="text-sm font-mono font-bold text-red-500">{sym}{hide(formatMoney(calOvertime / ex))}</span>
                    </div>
                  </div>
@@ -3016,7 +3013,7 @@ export default function App() {
 
             <div className="bg-card rounded-2xl p-4 border border-app shadow-lg relative overflow-hidden">
               <div className="grid grid-cols-7 gap-1 text-center mb-4">
-                 {[t('日'),t('一'),t('二'),t('三'),t('四'),t('五'),t('六')].map(d => (
+                 {['日','一','二','三','四','五','六'].map(d => (
                     <div key={d} className="text-[13px] text-tertiary font-bold py-1">{d}</div>
                  ))}
               </div>
@@ -3028,8 +3025,8 @@ export default function App() {
                  onDateClick={handleDateClick}
               />
               <div className="text-center mt-6 text-[11px] text-tertiary font-medium bg-card-inner/50 py-2.5 rounded-xl border border-app border-dashed">
-                 {t('提示：点击日期记录备忘事项，所有数据均保留在您本地。')}
-                                      </div>
+                 提示：点击日期记录备忘事项，所有数据均保留在您本地。
+              </div>
               <div className="text-center pt-8 pb-4 opacity-30">
                  <p className="text-[10px] font-mono tracking-widest text-tertiary uppercase">Version 1.0.23</p>
               </div>
@@ -3042,8 +3039,8 @@ export default function App() {
 
       {activeTab !== 'home' && activeTab !== 'pomodoro' && activeTab !== 'profile' && activeTab !== 'data' && activeTab !== 'calendar' && activeTab !== 'visa' && (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-card-inner z-40 absolute inset-0 top-0">
-           <h2 className="text-xl font-bold mb-2">{t('🚧 正在施工')}</h2>
-           <p className="text-sm">{t('功能正在开发中...')}</p>
+           <h2 className="text-xl font-bold mb-2">🚧 正在施工</h2>
+           <p className="text-sm">功能正在开发中...</p>
            <p className="text-xs text-secondary mt-1">Please come back later</p>
         </div>
       )}
@@ -3075,8 +3072,8 @@ export default function App() {
                   <div className="p-5 flex justify-between items-center border-b border-app">
                      <h3 className="text-lg font-bold text-primary flex items-center gap-2">
                         <Timer size={20} className="text-brand" />
-                        {t('所有记录')}
-                                                       </h3>
+                        所有记录
+                     </h3>
                      <button onClick={() => setShowAllCountdowns(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-card-inner border border-app text-tertiary hover:text-primary transition-colors">
                         <X size={16} />
                      </button>
@@ -3084,7 +3081,7 @@ export default function App() {
                   <div className="p-5 overflow-y-auto space-y-4 no-scrollbar">
                      <div className="grid grid-cols-2 gap-3">
                          <CountdownCard 
-                            title={t('下班倒计时')}
+                            title="下班倒计时"
                             time={`${pad0(Math.floor(offWorkSecs / 3600))}:${pad0(Math.floor((offWorkSecs % 3600)/60))}:${pad0(offWorkSecs % 60)}`}
                             desc={`${config.endTime}下班`}
                             progress={100 - (offWorkSecs / (derivedHoursPerDay * 3600)) * 100}
@@ -3092,15 +3089,15 @@ export default function App() {
                             color="green"
                          />
                          <CountdownCard 
-                            title={isRestDay ? t('距离下个休息日') : t('距离休息日')}
+                            title={isRestDay ? "距离下个休息日" : "距离休息日"}
                             time={`${daysToNextRestDay} 天`}
-                            desc={t('盼望好日子')}
+                            desc="盼望好日子"
                             progress={100 - (daysToNextRestDay / 7) * 100}
                             icon={<CalendarIcon size={16} />}
                             color="yellow"
                          />
                          <CountdownCard 
-                            title={t('距离发薪日')}
+                            title="距离发薪日"
                             time={`${daysToPayday} 天`}
                             desc={`${config.payday}号发薪`}
                             progress={100 - (daysToPayday / daysInMonth) * 100}
@@ -3108,7 +3105,7 @@ export default function App() {
                             color="amber"
                          />
                          <CountdownCard 
-                            title={t('距离退休')}
+                            title="距离退休"
                             time={`${daysToRetire}天`}
                             desc={retireDateObj.toLocaleDateString()}
                             progress={daysToRetire < 0 ? 100 : Math.max(0, 100 - (daysToRetire / (365*30)) * 100)}
@@ -3138,12 +3135,12 @@ export default function App() {
       </AnimatePresence>
 
         <div className="fixed bottom-0 left-0 right-0 w-full md:max-w-4xl lg:max-w-6xl xl:max-w-[1400px] mx-auto bg-card-inner/90 backdrop-blur-lg border-t md:border border-app py-2 md:py-4 px-2 md:px-16 flex justify-between items-center z-50 md:rounded-b-3xl md:rounded-t-none md:bottom-4 xl:rounded-3xl shadow-2xl md:mb-4 xl:mb-0 transition-all duration-300">
-         <NavItem icon={<Home size={22} />} label={t('首页')} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-         <NavItem icon={<Timer size={22} />} label={t('专注')} active={activeTab === 'pomodoro'} onClick={() => setActiveTab('pomodoro')} />
-         <NavItem icon={<CalendarIcon size={22} />} label={t('日历')} active={activeTab === 'calendar'} onClick={() => { setActiveTab('calendar'); setCalendarDate(new Date()); }} />
-         <NavItem icon={<Globe size={22} />} label={t('签证')} active={activeTab === 'visa'} onClick={() => setActiveTab('visa')} />
-         <NavItem icon={<PieChart size={22} />} label={t('数据')} active={activeTab === 'data'} onClick={() => setActiveTab('data')} />
-         <NavItem icon={<Settings size={22} />} label={t('设定')} active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
+         <NavItem icon={<Home size={22} />} label="首页" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+         <NavItem icon={<Timer size={22} />} label="专注" active={activeTab === 'pomodoro'} onClick={() => setActiveTab('pomodoro')} />
+         <NavItem icon={<CalendarIcon size={22} />} label="日历" active={activeTab === 'calendar'} onClick={() => { setActiveTab('calendar'); setCalendarDate(new Date()); }} />
+         <NavItem icon={<Globe size={22} />} label="签证" active={activeTab === 'visa'} onClick={() => setActiveTab('visa')} />
+         <NavItem icon={<PieChart size={22} />} label="数据" active={activeTab === 'data'} onClick={() => setActiveTab('data')} />
+         <NavItem icon={<Settings size={22} />} label="设定" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
       </div>
       
       {/* Off-screen Share Layout */}
@@ -3162,25 +3159,25 @@ export default function App() {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div>
-                <p style={{ fontSize: '14px', color: '#888888', marginBottom: '4px' }}>{t('今日摸鱼收入')}</p>
+                <p style={{ fontSize: '14px', color: '#888888', marginBottom: '4px' }}>今日摸鱼收入</p>
                 <div style={{ fontSize: '36px', fontFamily: 'monospace', fontWeight: 'bold', color: '#4CAF50' }}>¥{formatMoney(earnedToday)}</div>
               </div>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ backgroundColor: '#1A1A1E', padding: '16px', borderRadius: '16px', border: '1px solid #2A2A2E' }}>
-                  <p style={{ fontSize: '12px', color: '#888888', marginBottom: '4px' }}>{t('本月累计')}</p>
+                  <p style={{ fontSize: '12px', color: '#888888', marginBottom: '4px' }}>本月累计</p>
                   <div style={{ fontSize: '18px', fontFamily: 'monospace', fontWeight: '600' }}>¥{formatMoney(earnedThisMonth)}</div>
                 </div>
                 <div style={{ backgroundColor: '#1A1A1E', padding: '16px', borderRadius: '16px', border: '1px solid #2A2A2E' }}>
-                  <p style={{ fontSize: '12px', color: '#888888', marginBottom: '4px' }}>{t('奶茶换算')}</p>
+                  <p style={{ fontSize: '12px', color: '#888888', marginBottom: '4px' }}>奶茶换算</p>
                   <div style={{ fontSize: '18px', fontFamily: 'monospace', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span>🧋</span> {(earnedToday / MILK_TEA_PRICE).toFixed(1)} {t('杯')}
-                                                        </div>
+                    <span>🧋</span> {(earnedToday / MILK_TEA_PRICE).toFixed(1)} 杯
+                  </div>
                 </div>
               </div>
 
               <div style={{ backgroundColor: 'rgba(76, 175, 80, 0.1)', border: '1px solid rgba(76, 175, 80, 0.2)', padding: '16px', borderRadius: '16px', marginTop: '16px' }}>
-                <p style={{ color: '#81C784', fontWeight: '500', fontSize: '14px', lineHeight: '1.6' }}>{t('我今天用 TimeMeter 赚了 ¥')}{formatMoney(earnedToday).split('.')[0]}{t('，相当于')} {Math.floor(earnedToday / MILK_TEA_PRICE)} {t('杯奶茶的自由！')}</p>
+                <p style={{ color: '#81C784', fontWeight: '500', fontSize: '14px', lineHeight: '1.6' }}>我今天用 TimeMeter 赚了 ¥{formatMoney(earnedToday).split('.')[0]}，相当于 {Math.floor(earnedToday / MILK_TEA_PRICE)} 杯奶茶的自由！</p>
               </div>
             </div>
           </div>
@@ -3199,19 +3196,19 @@ export default function App() {
               className="bg-card border border-app p-4 rounded-3xl max-w-sm w-full shadow-2xl flex flex-col items-center"
               onClick={e => e.stopPropagation()}
             >
-              <h3 className="font-semibold text-primary mb-4 text-lg">{t('一键生成分享图')}</h3>
+              <h3 className="font-semibold text-primary mb-4 text-lg">一键生成分享图</h3>
               {shareImgUrl ? (
                 <img src={shareImgUrl} alt="Share" className="w-full rounded-2xl shadow-lg border border-app filter brightness-[0.85]" />
               ) : (
-                <div className="w-full aspect-[3/4] bg-card-inner rounded-2xl animate-pulse flex items-center justify-center text-secondary text-sm">{t('生成中...')}</div>
+                <div className="w-full aspect-[3/4] bg-card-inner rounded-2xl animate-pulse flex items-center justify-center text-secondary text-sm">生成中...</div>
               )}
-              <p className="text-xs text-secondary mt-4 text-center">{t('长按图片保存或分享给其他人')}</p>
+              <p className="text-xs text-secondary mt-4 text-center">长按图片保存或分享给其他人</p>
               <button 
                 className="w-full mt-4 py-3 bg-brand text-[#141414] font-semibold rounded-xl text-sm"
                 onClick={() => setShowShareModal(false)}
               >
-                {t('完成')}
-                                            </button>
+                完成
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -3231,7 +3228,7 @@ export default function App() {
                  onClick={e => e.stopPropagation()}
                >
                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 blur-3xl rounded-full"></div>
-                 <h3 className="font-bold text-primary mb-6 text-lg tracking-wider">{t('今日专属运势卡')}</h3>
+                 <h3 className="font-bold text-primary mb-6 text-lg tracking-wider">今日专属运势卡</h3>
                  
                  <div className="w-24 h-24 rounded-full bg-card-inner border-2 border-app flex items-center justify-center text-5xl mb-4 shadow-inner">
                     {dailyFortune.emoji}
@@ -3253,8 +3250,8 @@ export default function App() {
                    className="w-full mt-8 py-3 bg-card-inner border border-app text-primary font-semibold rounded-xl text-sm hover:bg-app transition-colors"
                    onClick={() => setFortuneModalOpen(false)}
                  >
-                   {t('收下运势')}
-                                               </button>
+                   收下运势
+                 </button>
                </motion.div>
             </motion.div>
          )}

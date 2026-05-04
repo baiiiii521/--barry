@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plane, Star, Trash2, Calendar as CalendarIcon, MapPin, ChevronRight, ArrowLeft } from 'lucide-react';
 
@@ -16,22 +17,22 @@ type TravelRecord = {
   port: string;
 };
 
-const COUNTRIES = ["越南", "泰国", "其他"];
+const COUNTRIES = [t('越南'), t('泰国'), t('其他')];
 const VIETNAM_PORTS = [
-  "友谊关", "东兴", "老街口岸", "胡志明市机场", "河内机场",
-  "岘港机场", "芽庄机场", "富国岛机场", "芒街口岸", "高平口岸",
-  "谅山口岸", "同登口岸", "其他"
+  t('友谊关'), t('东兴'), t('老街口岸'), t('胡志明市机场'), t('河内机场'),
+  t('岘港机场'), t('芽庄机场'), t('富国岛机场'), t('芒街口岸'), t('高平口岸'),
+  t('谅山口岸'), t('同登口岸'), t('其他')
 ];
 const THAILAND_PORTS = [
-  "曼谷素万那普机场 (BKK)", "曼谷廊曼机场 (DMK)", "普吉岛机场 (HKT)", "清迈机场 (CNX)", "其他"
+  t('曼谷素万那普机场 (BKK)'), t('曼谷廊曼机场 (DMK)'), t('普吉岛机场 (HKT)'), t('清迈机场 (CNX)'), t('其他')
 ];
 
 const VISA_TYPES = [
-  "旅游签 (Tourist)",
-  "商务签 (Business)",
-  "工作签 (Work)",
-  "学生签 (Student)",
-  "探亲签 (Family)"
+  t('旅游签 (Tourist)'),
+  t('商务签 (Business)'),
+  t('工作签 (Work)'),
+  t('学生签 (Student)'),
+  t('探亲签 (Family)')
 ];
 
 const pad0 = (n: number) => n.toString().padStart(2, '0');
@@ -135,7 +136,7 @@ export function VisaTab() {
 
   const saveVisa = () => {
     if (!editingVisa.type || !editingVisa.country || !editingVisa.effectiveDate || !editingVisa.expiryDate) {
-      return alert("请填写完整信息");
+      return alert(t('请填写完整信息'));
     }
     const newVisa = { id: editingVisa.id || Date.now().toString(), ...editingVisa } as VisaData;
     setVisas([newVisa]);
@@ -150,23 +151,23 @@ export function VisaTab() {
   // --- Sub-View: Edit Records ---
   const [newRecType, setNewRecType] = useState<'entry'|'exit'>('entry');
   const [newRecDate, setNewRecDate] = useState('');
-  const [newRecPortDropdown, setNewRecPortDropdown] = useState('其他');
+  const [newRecPortDropdown, setNewRecPortDropdown] = useState(t('其他'));
   const [newRecPortCustom, setNewRecPortCustom] = useState('');
 
   const activeCountryContext = activeVisa?.country || '';
-  const portOptions = activeCountryContext === '越南' ? VIETNAM_PORTS : activeCountryContext === '泰国' ? THAILAND_PORTS : ['其他'];
+  const portOptions = activeCountryContext === t('越南') ? VIETNAM_PORTS : activeCountryContext === t('泰国') ? THAILAND_PORTS : [t('其他')];
   
   useEffect(() => {
      if (portOptions.length > 1) {
         setNewRecPortDropdown(portOptions[0]);
      } else {
-        setNewRecPortDropdown('其他');
+        setNewRecPortDropdown(t('其他'));
      }
   }, [activeCountryContext, portOptions]);
 
   const saveRecord = () => {
-    if (!newRecDate) return alert("请选择日期");
-    const port = newRecPortDropdown === '其他' ? (newRecPortCustom || '未知口岸') : newRecPortDropdown;
+    if (!newRecDate) return alert(t('请选择日期'));
+    const port = newRecPortDropdown === t('其他') ? (newRecPortCustom || t('未知口岸')) : newRecPortDropdown;
     const rec: TravelRecord = {
       id: Date.now().toString(),
       type: newRecType,
@@ -185,7 +186,7 @@ export function VisaTab() {
           <button onClick={() => setView('main')} className="text-white p-2 shrink-0">
             <ArrowLeft size={24} />
           </button>
-          <span className="text-white font-bold text-lg">编辑签证</span>
+          <span className="text-white font-bold text-lg">{t('编辑签证')}</span>
           <div className="w-8 shrink-0"></div>
         </div>
 
@@ -196,7 +197,7 @@ export function VisaTab() {
                 <span className="text-2xl">🌍</span>
               </div>
               <div className="flex flex-col flex-1">
-                <label className="text-[11px] text-gray-400 font-bold mb-1">国家</label>
+                <label className="text-[11px] text-gray-400 font-bold mb-1">{t('国家')}</label>
                 <select 
                   className="font-bold text-lg text-gray-800 bg-transparent border-none p-0 focus:ring-0 outline-none w-full"
                   value={editingVisa.country || COUNTRIES[0]}
@@ -204,10 +205,10 @@ export function VisaTab() {
                 >
                   {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                {editingVisa.country === '其他' && (
+                {editingVisa.country === t('其他') && (
                   <input 
                     type="text" 
-                    placeholder="输入国家名称"
+                    placeholder={t('输入国家名称')}
                     className="font-bold text-base text-gray-800 bg-transparent border-b border-[#0288D1] p-1 mt-2 focus:ring-0 outline-none w-full"
                     onChange={e => setEditingVisa({...editingVisa, country: e.target.value})}
                   />
@@ -220,7 +221,7 @@ export function VisaTab() {
                 <span className="text-2xl">🥟</span>
               </div>
               <div className="flex flex-col flex-1">
-                <label className="text-[11px] text-gray-400 font-bold mb-1">签证类型</label>
+                <label className="text-[11px] text-gray-400 font-bold mb-1">{t('签证类型')}</label>
                 <select 
                   className="font-bold text-lg text-gray-800 bg-transparent border-none p-0 focus:ring-0 outline-none w-full"
                   value={editingVisa.type || ''}
@@ -236,7 +237,7 @@ export function VisaTab() {
                 <CalendarIcon size={24} />
               </div>
               <div className="flex flex-col flex-1">
-                <label className="text-[11px] text-gray-400 font-bold mb-1">生效日期</label>
+                <label className="text-[11px] text-gray-400 font-bold mb-1">{t('生效日期')}</label>
                 <input 
                   type="date"
                   className="font-bold text-lg text-gray-800 bg-transparent border-none p-0 focus:ring-0 outline-none w-full"
@@ -251,7 +252,7 @@ export function VisaTab() {
                 <CalendarIcon size={24} />
               </div>
               <div className="flex flex-col flex-1">
-                <label className="text-[11px] text-gray-400 font-bold mb-1">到期日期</label>
+                <label className="text-[11px] text-gray-400 font-bold mb-1">{t('到期日期')}</label>
                 <input 
                   type="date"
                   className="font-bold text-lg text-gray-800 bg-transparent border-none p-0 focus:ring-0 outline-none w-full"
@@ -266,38 +267,38 @@ export function VisaTab() {
                 onClick={deleteVisa}
                 className="flex-1 bg-gray-50 text-gray-400 font-bold rounded-full py-3.5 flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors"
                >
-                <Trash2 size={16} /> 删除
-              </button>
+                <Trash2 size={16} /> {t('删除')}
+                                          </button>
               <button 
                 onClick={saveVisa}
                 className="flex-[2] bg-[#0288D1] text-white font-bold rounded-full py-3.5 shadow-md flex items-center justify-center gap-2 hover:brightness-110 transition-colors"
                >
                 <div className="w-2 h-2 bg-white rounded-full"></div>
-                保存
-              </button>
+                {t('保存')}
+                                          </button>
             </div>
           </div>
 
           <div className="bg-white rounded-[24px] p-6 shadow-sm">
             <div className="flex items-center gap-2 text-[#0288D1] font-bold mb-6 text-sm">
-               <MapPin size={18} /> 状态提醒规则
-            </div>
+               <MapPin size={18} /> {t('状态提醒规则')}
+                                    </div>
             <div className="space-y-4">
                <div className="flex justify-between items-center text-sm font-bold">
-                 <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-[#4CAF50]"></div><span className="text-gray-700">安全</span></div>
-                 <span className="text-gray-400">剩余30天以上</span>
+                 <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-[#4CAF50]"></div><span className="text-gray-700">{t('安全')}</span></div>
+                 <span className="text-gray-400">{t('剩余30天以上')}</span>
                </div>
                <div className="flex justify-between items-center text-sm font-bold">
-                 <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-[#FFB300]"></div><span className="text-gray-700">警告</span></div>
-                 <span className="text-gray-400">剩余16-30天</span>
+                 <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-[#FFB300]"></div><span className="text-gray-700">{t('警告')}</span></div>
+                 <span className="text-gray-400">{t('剩余16-30天')}</span>
                </div>
                <div className="flex justify-between items-center text-sm font-bold">
-                 <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-[#FF6F00]"></div><span className="text-gray-700">危险</span></div>
-                 <span className="text-gray-400">剩余8-15天</span>
+                 <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-[#FF6F00]"></div><span className="text-gray-700">{t('危险')}</span></div>
+                 <span className="text-gray-400">{t('剩余8-15天')}</span>
                </div>
                <div className="flex justify-between items-center text-sm font-bold">
-                 <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-[#E53935]"></div><span className="text-gray-700">紧急</span></div>
-                 <span className="text-gray-400">剩余7天以内</span>
+                 <div className="flex items-center gap-3"><div className="w-2.5 h-2.5 rounded-full bg-[#E53935]"></div><span className="text-gray-700">{t('紧急')}</span></div>
+                 <span className="text-gray-400">{t('剩余7天以内')}</span>
                </div>
             </div>
           </div>
@@ -313,7 +314,7 @@ export function VisaTab() {
           <button onClick={() => setView('main')} className="p-2 shrink-0">
             <ArrowLeft size={24} />
           </button>
-          <span className="font-bold text-lg tracking-tight">出入境记录</span>
+          <span className="font-bold text-lg tracking-tight">{t('出入境记录')}</span>
           <div className="w-8 shrink-0"></div>
         </div>
 
@@ -321,22 +322,22 @@ export function VisaTab() {
           <div className="bg-white rounded-[24px] p-6 shadow-sm">
             <div className="flex items-center gap-2 text-primary font-bold mb-6 text-sm">
                <div className="w-3 h-3 bg-[#0288D1] rounded-full"></div>
-               登记新行程
-            </div>
+               {t('登记新行程')}
+                                    </div>
             
             <div className="flex bg-gray-50 rounded-2xl p-1 mb-6 border border-gray-100">
                <button 
                  onClick={() => setNewRecType('entry')}
                  className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${newRecType === 'entry' ? 'bg-white text-[#4CAF50] shadow-sm' : 'text-gray-400'}`}
                >
-                 入境
-               </button>
+                 {t('入境')}
+                                           </button>
                <button 
                  onClick={() => setNewRecType('exit')}
                  className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${newRecType === 'exit' ? 'bg-white text-[#FFB300] shadow-sm' : 'text-gray-400'}`}
                >
-                 出境
-               </button>
+                 {t('出境')}
+                                           </button>
             </div>
 
             <div className="space-y-4 mb-6">
@@ -355,11 +356,11 @@ export function VisaTab() {
                         {portOptions.map(p => <option key={p} value={p}>{p}</option>)}
                      </select>
                   </div>
-                  {newRecPortDropdown === '其他' && (
+                  {newRecPortDropdown === t('其他') && (
                      <div className="flex items-center mt-1 pb-1 pl-8">
                        <input 
                           type="text" 
-                          placeholder="输入自定义口岸..." 
+                          placeholder={t('输入自定义口岸...')} 
                           value={newRecPortCustom} 
                           onChange={e => setNewRecPortCustom(e.target.value)} 
                           className="w-full bg-transparent border-b border-[#0288D1]/30 text-base font-bold text-[#0288D1] focus:ring-0 outline-none p-1" 
@@ -370,20 +371,20 @@ export function VisaTab() {
             </div>
 
             <button onClick={saveRecord} className="w-full bg-[#0288D1] text-white font-bold rounded-full py-4 text-sm shadow-md hover:brightness-110 transition-colors">
-              保存登记
-            </button>
+              {t('保存登记')}
+                                    </button>
           </div>
 
           <div className="px-1">
              <div className="flex items-center gap-2 text-gray-400 text-xs font-bold mb-4">
-               <CalendarIcon size={14} /> 行程历史
-             </div>
+               <CalendarIcon size={14} /> {t('行程历史')}
+                                     </div>
              <div className="space-y-4">
                {records.map(rec => (
                   <div key={rec.id} className="bg-white rounded-[24px] p-4 flex items-center justify-between shadow-sm">
                     <div className="flex items-center gap-4">
                        <div className={`w-12 h-12 rounded-[16px] flex items-center justify-center font-bold text-lg ${rec.type === 'entry' ? 'bg-[#E8F5E9] text-[#4CAF50]' : 'bg-[#FFF8E1] text-[#FFCA28]'}`}>
-                          {rec.type === 'entry' ? '入' : '出'}
+                          {rec.type === 'entry' ? t('入') : t('出')}
                        </div>
                        <div className="flex flex-col">
                           <span className="font-bold text-gray-800 text-lg tracking-tight mb-0.5">{rec.date}</span>
@@ -399,7 +400,7 @@ export function VisaTab() {
                   </div>
                ))}
                {records.length === 0 && (
-                 <div className="text-center py-10 opacity-50 text-sm font-bold text-gray-500">暂无记录</div>
+                 <div className="text-center py-10 opacity-50 text-sm font-bold text-gray-500">{t('暂无记录')}</div>
                )}
              </div>
           </div>
@@ -413,7 +414,7 @@ export function VisaTab() {
     <div className="flex-1 w-full absolute inset-0 z-40 flex flex-col pt-12 md:rounded-3xl md:max-w-4xl mx-auto" style={{background: 'linear-gradient(180deg, #0288D1 0%, #03A9F4 25%, #F5F7FA 25%, #F5F7FA 100%)'}}>
        <div className="px-6 flex justify-between items-start mb-8 text-white pt-2">
           <div className="flex flex-col">
-             <h1 className="text-[28px] font-bold tracking-tight mb-1">出国管家</h1>
+             <h1 className="text-[28px] font-bold tracking-tight mb-1">{t('出国管家')}</h1>
              <span className="text-xs font-bold tracking-widest opacity-90 uppercase">OVERSEAS BUTLER</span>
           </div>
           <div className="w-16 h-16 bg-white rounded-[20px] shadow-lg flex items-center justify-center shrink-0 border-[3px] border-white/20">
@@ -432,9 +433,9 @@ export function VisaTab() {
                    <Star size={24} fill="currentColor" />
                 </div>
                 <div className="flex flex-col">
-                   <span className="text-gray-400 font-bold text-xs mb-1">签证状态</span>
+                   <span className="text-gray-400 font-bold text-xs mb-1">{t('签证状态')}</span>
                    <span className="font-bold text-gray-800 text-lg tracking-tight">
-                     {activeVisa ? activeVisa.type : "未设置签证"}
+                     {activeVisa ? activeVisa.type : t('未设置签证')}
                    </span>
                 </div>
              </div>
@@ -443,7 +444,7 @@ export function VisaTab() {
                    <span className="text-[32px] font-bold leading-none tracking-tighter shadow-sm" style={{color: statusColor}}>
                        {activeVisa ? remainingDays : '-'}
                    </span>
-                   <span className="text-[10px] text-gray-400 font-bold mt-1">天剩余</span>
+                   <span className="text-[10px] text-gray-400 font-bold mt-1">{t('天剩余')}</span>
                 </div>
                 <ChevronRight size={18} className="text-gray-300" />
              </div>
@@ -459,14 +460,14 @@ export function VisaTab() {
                    <Plane size={24} fill="currentColor"/>
                 </div>
                 <div className="flex flex-col">
-                   <span className="text-gray-400 font-bold text-xs mb-1">出入境记录</span>
-                   <span className="font-bold text-gray-800 text-lg tracking-tight">本次停留 {currentStay} 天</span>
+                   <span className="text-gray-400 font-bold text-xs mb-1">{t('出入境记录')}</span>
+                   <span className="font-bold text-gray-800 text-lg tracking-tight">{t('本次停留')} {currentStay} {t('天')}</span>
                 </div>
              </div>
              <div className="flex items-center gap-2">
                 <div className="flex flex-col items-end">
                    <span className="text-[32px] font-bold text-[#00E676] leading-none tracking-tighter">{yearTotal}</span>
-                   <span className="text-[10px] text-gray-400 font-bold mt-1">年度天数</span>
+                   <span className="text-[10px] text-gray-400 font-bold mt-1">{t('年度天数')}</span>
                 </div>
                 <ChevronRight size={18} className="text-gray-300" />
              </div>
