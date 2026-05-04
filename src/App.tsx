@@ -210,27 +210,55 @@ function NiumaAvatar({
       classic: '🐴'
    };
    
-   let emoji = baseEmojis[activeTheme] || '🐮';
-   if (isSlackingTooMuch) emoji = '🐟';
+   const emoji = baseEmojis[activeTheme] || '🐮';
 
    return (
       <div className="relative inline-flex items-center justify-center text-[42px] z-10 w-16 h-16 pointer-events-none">
-         <span className="relative z-10 filter drop-shadow-md transform hover:scale-110 transition-transform duration-300">{emoji}</span>
-         {isWorkingTooMuch && !isSlackingTooMuch && (
-            <div className="absolute inset-0 flex justify-center items-center gap-2 mt-2 z-20 opacity-80 mix-blend-multiply dark:mix-blend-normal">
-               <div className="w-2.5 h-2.5 rounded-full bg-black/60 blur-[1.5px] dark:bg-black/90"></div>
-               <div className="w-2.5 h-2.5 rounded-full bg-black/60 blur-[1.5px] dark:bg-black/90"></div>
-            </div>
-         )}
+         {/* Background Auras */}
          {isOvertime && (
-            <div className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-3 bg-[#e8c39e] rounded-b-[100%] rounded-t-[50%] z-20 border border-black/10 overflow-hidden shadow-inner">
-               <div className="w-full h-full bg-gradient-to-b from-white/30 to-transparent"></div>
+            <div className="absolute inset-0 bg-red-500/30 rounded-full blur-md animate-pulse z-0"></div>
+         )}
+         {isNearOffwork && !isOvertime && (
+            <div className="absolute inset-0 bg-green-500/30 rounded-full blur-md animate-pulse z-0"></div>
+         )}
+         
+         {/* Base Emoji */}
+         <span className={`relative z-10 filter drop-shadow-md transform hover:scale-110 transition-transform duration-300 ${isOvertime ? 'animate-bounce' : ''}`}>{emoji}</span>
+         
+         {/* Floating State Icons */}
+         {isSlackingTooMuch && (
+            <motion.div 
+               animate={{ y: [0, -8, 0], x: [0, 4, 0] }}
+               transition={{ repeat: Infinity, duration: 2.5 }}
+               className="absolute -top-3 -left-3 text-2xl z-20 drop-shadow-sm"
+            >
+               🐟
+            </motion.div>
+         )}
+         
+         {isWorkingTooMuch && !isSlackingTooMuch && !isOvertime && (
+            <div className="absolute -top-2 right-0 text-xl z-20 opacity-80 rotate-12 drop-shadow-sm">
+               💢
             </div>
          )}
-         {isNearOffwork && (
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-3xl z-20 drop-shadow-lg scale-125">📿</div>
+         
+         {isNearOffwork && !isOvertime && (
+            <motion.div 
+               animate={{ x: [0, 5, 0], rotate: [0, 10, -10, 0] }}
+               transition={{ repeat: Infinity, duration: 1.5 }}
+               className="absolute -bottom-1 -left-2 text-2xl z-20 drop-shadow-sm"
+            >
+               🏃
+            </motion.div>
          )}
-         <div className="text-xl absolute bottom-0 -right-2 z-30 drop-shadow-xl filter">💻</div>
+
+         {isOvertime && (
+            <div className="absolute -bottom-2 left-0 text-2xl z-20 opacity-90 animate-pulse drop-shadow-sm">
+               🔥
+            </div>
+         )}
+         
+         <div className="text-xl absolute bottom-0 -right-2 z-30 drop-shadow-lg filter">💻</div>
       </div>
    );
 }
@@ -3137,7 +3165,10 @@ export default function App() {
          )}
       </AnimatePresence>
 
-        <div className="fixed bottom-0 left-0 right-0 w-full md:max-w-4xl lg:max-w-6xl xl:max-w-[1400px] mx-auto bg-card-inner/90 backdrop-blur-lg border-t md:border border-app py-2 md:py-4 px-2 md:px-16 flex justify-between items-center z-50 md:rounded-b-3xl md:rounded-t-none md:bottom-4 xl:rounded-3xl shadow-2xl md:mb-4 xl:mb-0 transition-all duration-300">
+        <div 
+          className="fixed bottom-0 left-0 right-0 w-full md:max-w-4xl lg:max-w-6xl xl:max-w-[1400px] mx-auto bg-card-inner/90 backdrop-blur-lg border-t md:border border-app pt-2 px-2 sm:px-4 md:px-16 flex justify-evenly md:justify-between items-center z-50 md:rounded-b-3xl md:rounded-t-none md:bottom-4 xl:rounded-3xl shadow-2xl md:mb-4 xl:mb-0 transition-all duration-300"
+          style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
          <NavItem icon={<Home size={22} />} label={t('首页')} active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
          <NavItem icon={<Timer size={22} />} label={t('专注')} active={activeTab === 'pomodoro'} onClick={() => setActiveTab('pomodoro')} />
          <NavItem icon={<CalendarIcon size={22} />} label={t('日历')} active={activeTab === 'calendar'} onClick={() => { setActiveTab('calendar'); setCalendarDate(new Date()); }} />
@@ -3326,14 +3357,25 @@ function CountdownCard({ title, time, desc, progress, icon, color }: { title: st
 
 function NavItem({ icon, label, active = false, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void }) {
   return (
-    <div className={`flex flex-col items-center justify-center cursor-pointer gap-1 p-1`} onClick={onClick}>
-       <div className={`${active ? 'text-brand' : 'text-tertiary'} transition-colors`}>
+    <button 
+      className="relative flex flex-col items-center justify-center cursor-pointer gap-1 p-2 md:px-4 md:py-2 rounded-2xl transition-all duration-300 hover:bg-white/5 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-brand focus:ring-opacity-50"
+      onClick={onClick}
+      aria-label={label}
+    >
+       <div className={`${active ? 'text-brand scale-110' : 'text-tertiary group-hover:text-secondary'} transition-all duration-300 relative z-10`}>
          {icon}
        </div>
-       <div className={`text-[10px] ${active ? 'text-brand font-bold' : 'text-tertiary'}`}>
+       <div className={`text-[10px] md:text-xs transition-all duration-300 ${active ? 'text-brand font-bold' : 'text-tertiary group-hover:text-secondary'} relative z-10`}>
          {label}
        </div>
-    </div>
+       {active && (
+         <motion.div 
+            layoutId="nav-indicator"
+            className="absolute bottom-0 w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-brand"
+            transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+         />
+       )}
+    </button>
   );
 }
 
