@@ -3,7 +3,6 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { getNoiseSynth } from './lib/NoiseSynth';
 import { motion, AnimatePresence } from 'motion/react';
 import { Solar } from 'lunar-javascript';
-import Holidays from 'date-holidays';
 import html2canvas from 'html2canvas';
 
 import { isDateCustomHoliday, isDateCustomWorkday, getCustomHolidayName } from './holidays';
@@ -965,20 +964,6 @@ export default function App() {
   const [pomodoroTask, setPomodoroTask] = useState(() => runtimeState?.pomodoroTask ?? "");
   const [completedPomodoros, setCompletedPomodoros] = useState(() => runtimeState?.completedPomodoros ?? 0);
 
-  // === Visa State ===
-  const [visaEntries, setVisaEntries] = useState<{ id: string, entryDate: string, exitDate: string, country: string, validityDays: number, entryAirport: string, exitAirport: string }[]>(() => {
-    try {
-      const saved = localStorage.getItem('visaEntries');
-      if (saved) return JSON.parse(saved);
-    } catch(e) {}
-    return [];
-  });
-  const [showFinishedVisa, setShowFinishedVisa] = useState(true);
-  
-  useEffect(() => {
-    localStorage.setItem('visaEntries', JSON.stringify(visaEntries));
-  }, [visaEntries]);
-
   // === Reminder State ===
   const [reminderText, setReminderText] = useState(t('该摸一会儿鱼了，休息一下！'));
   const [reminderMins, setReminderMins] = useState(30);
@@ -1209,27 +1194,32 @@ export default function App() {
     return 0;
   });
   
+  const runtimeSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    const d = new Date().toLocaleDateString("en-US", {timeZone: config.localTimezone});
-    localStorage.setItem('niuma_runtime_state', JSON.stringify({
-      date: d,
-      slackSecondsToday,
-      overtimeSecondsToday,
-      isSlacking,
-      isOvertime,
-      pomodoroTimeLeft,
-      pomodoroLength,
-      isPomodoroActive,
-      pomodoroTask,
-      completedPomodoros,
-      lastGlobalTick: Date.now()
-    }));
+    if (runtimeSaveTimerRef.current) clearTimeout(runtimeSaveTimerRef.current);
+    runtimeSaveTimerRef.current = setTimeout(() => {
+      const d = new Date().toLocaleDateString("en-US", {timeZone: config.localTimezone});
+      localStorage.setItem('niuma_runtime_state', JSON.stringify({
+        date: d,
+        slackSecondsToday,
+        overtimeSecondsToday,
+        isSlacking,
+        isOvertime,
+        pomodoroTimeLeft,
+        pomodoroLength,
+        isPomodoroActive,
+        pomodoroTask,
+        completedPomodoros,
+        lastGlobalTick: Date.now()
+      }));
+    }, 10000);
+    return () => { if (runtimeSaveTimerRef.current) clearTimeout(runtimeSaveTimerRef.current); };
   }, [config.localTimezone, slackSecondsToday, overtimeSecondsToday, isSlacking, isOvertime, pomodoroTimeLeft, pomodoroLength, isPomodoroActive, pomodoroTask, completedPomodoros]);
 
   // Real-time timepieces and lunar
   const otherTime = new Date(now.toLocaleString("en-US", {timeZone: config.otherTimezone}));
   const lunar = Solar.fromDate(localTime).getLunar();
-  const lunarDateStr = `农历${lunar.getMonthInChinese()}月${lunar.getDayInChinese()} ${lunar.getYearInGanZhi()}年`;
+  const lunarDateStr = `${t('农历')}${lunar.getMonthInChinese()}${t('月')}${lunar.getDayInChinese()} ${lunar.getYearInGanZhi()}${t('年')}`;
 
   // Work calculation
   const getSecondsFromMidnight = (timeStr: string) => {
@@ -1479,19 +1469,6 @@ export default function App() {
     hoursThisMonth = Math.max(0, safePastWorkDaysThisMonth * derivedHoursPerDay + (workSecondsToday / 3600));
   }
 
-  console.log("DEBUG", {
-    localTime: localTime.toString(),
-    year: localTime.getFullYear(),
-    month: localTime.getMonth(),
-    date: localTime.getDate(),
-    max: Math.max(0, localTime.getDate() - 1),
-    pastWorkDaysThisMonth,
-    currentMonthWorkDays,
-    earnedToday,
-    earnedThisMonth,
-    hoursThisMonth
-  });
-  
   let monthsThisYear = localTime.getMonth();
   if (joinDateObj.getFullYear() === localTime.getFullYear()) {
       monthsThisYear = Math.max(0, localTime.getMonth() - joinDateObj.getMonth());
@@ -2531,7 +2508,7 @@ export default function App() {
                        <button 
                          onClick={() => setConfig({
                              ...config, 
-                             customEvents: config.customEvents.filter((_: any, idx: number) => idx !== i)
+                             customEvents: config.customEvents.filter((e: any) => e.id !== evt.id)
                          })}
                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500/20"
                        ><span className="text-xs">×</span></button>

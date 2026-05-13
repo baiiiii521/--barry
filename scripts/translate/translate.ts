@@ -94,6 +94,6 @@ files.forEach(sourceFile => {
 project.saveSync();
 
 const fs = require('fs');
-fs.writeFileSync('src/dict.json', JSON.stringify(dictionary, null, 2));
+fs.writeFileSync('src/dict-zh.json', JSON.stringify(dictionary, null, 2));
 
 console.log('AST transformation completed.');

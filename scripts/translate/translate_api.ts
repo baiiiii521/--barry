@@ -4,7 +4,7 @@ import fs from 'fs';
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 async function run() {
-    const dict = JSON.parse(fs.readFileSync('dict.json', 'utf-8'));
+    const dict = JSON.parse(fs.readFileSync('src/dict-zh.json', 'utf-8'));
     const keys = Object.keys(dict);
 
     console.log(`Translating ${keys.length} keys...`);

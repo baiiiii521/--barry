@@ -38,6 +38,9 @@ const VISA_TYPES = [
 const pad0 = (n: number) => n.toString().padStart(2, '0');
 
 export function VisaTab() {
+  const [toast, setToast] = useState<string|null>(null);
+  useEffect(() => { if (!toast) return; const h = setTimeout(() => setToast(null), 2500); return () => clearTimeout(h); }, [toast]);
+
   const [visas, setVisas] = useState<VisaData[]>(() => {
     try {
       const saved = localStorage.getItem('my_visas');
@@ -136,7 +139,7 @@ export function VisaTab() {
 
   const saveVisa = () => {
     if (!editingVisa.type || !editingVisa.country || !editingVisa.effectiveDate || !editingVisa.expiryDate) {
-      return alert(t('请填写完整信息'));
+      setToast(t('请填写完整信息')); return;
     }
     const newVisa = { id: editingVisa.id || Date.now().toString(), ...editingVisa } as VisaData;
     setVisas([newVisa]);
@@ -166,7 +169,7 @@ export function VisaTab() {
   }, [activeCountryContext, portOptions]);
 
   const saveRecord = () => {
-    if (!newRecDate) return alert(t('请选择日期'));
+    if (!newRecDate) { setToast(t('请选择日期')); return; }
     const port = newRecPortDropdown === t('其他') ? (newRecPortCustom || t('未知口岸')) : newRecPortDropdown;
     const rec: TravelRecord = {
       id: Date.now().toString(),

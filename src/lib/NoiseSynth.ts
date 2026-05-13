@@ -1,29 +1,32 @@
-import { t } from "../i18n";
-
 export class NoiseSynth {
-   ctx: AudioContext;
+   ctx: AudioContext | null = null;
    nodes: Record<string, { masterGain: GainNode, elements: any[] }> = {};
    
-   constructor() {
-     this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+   private ensureCtx(): AudioContext | null {
+     if (!this.ctx) {
+       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+       if (!AudioContextClass) return null;
+       this.ctx = new AudioContextClass();
+     }
+     return this.ctx;
    }
  
    createWhiteNoise() {
-     const bufferSize = 2 * this.ctx.sampleRate;
-     const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+     const bufferSize = 2 * this.ctx!.sampleRate;
+     const noiseBuffer = this.ctx!.createBuffer(1, bufferSize, this.ctx!.sampleRate);
      const output = noiseBuffer.getChannelData(0);
      for (let i = 0; i < bufferSize; i++) {
          output[i] = Math.random() * 2 - 1;
      }
-     const whiteNoise = this.ctx.createBufferSource();
+     const whiteNoise = this.ctx!.createBufferSource();
      whiteNoise.buffer = noiseBuffer;
      whiteNoise.loop = true;
      return whiteNoise;
    }
  
    createPinkNoise() {
-     const bufferSize = 2 * this.ctx.sampleRate;
-     const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+     const bufferSize = 2 * this.ctx!.sampleRate;
+     const noiseBuffer = this.ctx!.createBuffer(1, bufferSize, this.ctx!.sampleRate);
      const output = noiseBuffer.getChannelData(0);
      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
      for (let i = 0; i < bufferSize; i++) {
@@ -38,15 +41,15 @@ export class NoiseSynth {
          output[i] *= 0.11; 
          b6 = white * 0.115926;
      }
-     const pinkNoise = this.ctx.createBufferSource();
+     const pinkNoise = this.ctx!.createBufferSource();
      pinkNoise.buffer = noiseBuffer;
      pinkNoise.loop = true;
      return pinkNoise;
    }
    
    createBrownNoise() {
-     const bufferSize = 2 * this.ctx.sampleRate;
-     const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+     const bufferSize = 2 * this.ctx!.sampleRate;
+     const noiseBuffer = this.ctx!.createBuffer(1, bufferSize, this.ctx!.sampleRate);
      const output = noiseBuffer.getChannelData(0);
      let lastOut = 0;
      for (let i = 0; i < bufferSize; i++) {
@@ -55,32 +58,35 @@ export class NoiseSynth {
          lastOut = output[i];
          output[i] *= 3.5; 
      }
-     const brownNoise = this.ctx.createBufferSource();
+     const brownNoise = this.ctx!.createBufferSource();
      brownNoise.buffer = noiseBuffer;
      brownNoise.loop = true;
      return brownNoise;
    }
  
    play(type: string) {
+      const ctx = this.ensureCtx();
+      if (!ctx) return;
+
       if (this.nodes[type]) return; // already playing
       
-      if (this.ctx.state === 'suspended') {
-         this.ctx.resume();
+      if (ctx.state === 'suspended') {
+         ctx.resume();
       }
       
-      const masterGain = this.ctx.createGain();
+      const masterGain = ctx.createGain();
       masterGain.gain.value = 0;
-      masterGain.connect(this.ctx.destination);
+      masterGain.connect(ctx.destination);
       
       let elements: any[] = [];
       this.nodes[type] = { masterGain, elements };
       
       if (type === 'rain') {
           const rumble = this.createBrownNoise();
-          const rumbleFilter = this.ctx.createBiquadFilter();
+          const rumbleFilter = ctx.createBiquadFilter();
           rumbleFilter.type = 'lowpass';
           rumbleFilter.frequency.value = 400;
-          const rumbleGain = this.ctx.createGain();
+          const rumbleGain = ctx.createGain();
           rumbleGain.gain.value = 0.8;
           rumble.connect(rumbleFilter);
           rumbleFilter.connect(rumbleGain);
@@ -89,10 +95,10 @@ export class NoiseSynth {
           elements.push(rumble);
 
           const rainNoise = this.createPinkNoise();
-          const filter = this.ctx.createBiquadFilter();
+          const filter = ctx.createBiquadFilter();
           filter.type = 'lowpass';
           filter.frequency.value = 1200;
-          const rainGain = this.ctx.createGain();
+          const rainGain = ctx.createGain();
           rainGain.gain.value = 0.5;
           rainNoise.connect(filter);
           filter.connect(rainGain);
@@ -101,11 +107,11 @@ export class NoiseSynth {
           elements.push(rainNoise);
 
           const dropNoise = this.createWhiteNoise();
-          const dropFilter = this.ctx.createBiquadFilter();
+          const dropFilter = ctx.createBiquadFilter();
           dropFilter.type = 'bandpass';
           dropFilter.frequency.value = 2500;
           dropFilter.Q.value = 1.0;
-          const dropGainNode = this.ctx.createGain();
+          const dropGainNode = ctx.createGain();
           dropGainNode.gain.value = 0;
           dropNoise.connect(dropFilter);
           dropFilter.connect(dropGainNode);
@@ -115,7 +121,7 @@ export class NoiseSynth {
 
           const triggerDrop = () => {
               if (!this.nodes[type]) return;
-              const now = this.ctx.currentTime;
+              const now = ctx.currentTime;
               dropGainNode.gain.cancelScheduledValues(now);
               dropGainNode.gain.setValueAtTime(0, now);
               dropGainNode.gain.linearRampToValueAtTime(0.3 + Math.random() * 0.3, now + 0.01);
@@ -126,17 +132,17 @@ export class NoiseSynth {
           triggerDrop();
       } else if (type === 'ocean') {
           const noise = this.createPinkNoise();
-          const filter = this.ctx.createBiquadFilter();
+          const filter = ctx.createBiquadFilter();
           filter.type = 'bandpass';
           filter.frequency.value = 400;
           filter.Q.value = 0.5;
-          const filterGain = this.ctx.createGain();
+          const filterGain = ctx.createGain();
           filterGain.gain.value = 2.0;
 
-          const lfo = this.ctx.createOscillator();
+          const lfo = ctx.createOscillator();
           lfo.type = 'sine';
           lfo.frequency.value = 0.08; 
-          const lfoFreqGain = this.ctx.createGain();
+          const lfoFreqGain = ctx.createGain();
           lfoFreqGain.gain.value = 300;
           lfo.connect(lfoFreqGain);
           lfoFreqGain.connect(filter.frequency);
@@ -149,14 +155,14 @@ export class NoiseSynth {
           elements.push(noise, lfo);
       } else if (type === 'wind') {
           const noise = this.createPinkNoise();
-          const filter = this.ctx.createBiquadFilter();
+          const filter = ctx.createBiquadFilter();
           filter.type = 'lowpass';
           filter.frequency.value = 400;
           
-          const lfo = this.ctx.createOscillator();
+          const lfo = ctx.createOscillator();
           lfo.type = 'sine';
           lfo.frequency.value = 0.15; 
-          const lfoGain = this.ctx.createGain();
+          const lfoGain = ctx.createGain();
           lfoGain.gain.value = 200;
           lfo.connect(lfoGain);
           lfoGain.connect(filter.frequency);
@@ -168,10 +174,10 @@ export class NoiseSynth {
           elements.push(noise, lfo);
       } else if (type === 'fire') {
           const base = this.createBrownNoise();
-          const baseFilter = this.ctx.createBiquadFilter();
+          const baseFilter = ctx.createBiquadFilter();
           baseFilter.type = 'lowpass';
           baseFilter.frequency.value = 300;
-          const baseGain = this.ctx.createGain();
+          const baseGain = ctx.createGain();
           baseGain.gain.value = 2.0;
           base.connect(baseFilter);
           baseFilter.connect(baseGain);
@@ -180,19 +186,19 @@ export class NoiseSynth {
           elements.push(base);
           
           // Crackles
-          const crackleBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
+          const crackleBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
           const crackleData = crackleBuffer.getChannelData(0);
           for(let i=0; i<crackleBuffer.length; i++) {
               if (Math.random() > 0.9997) crackleData[i] = Math.random() * 2 - 1;
               else crackleData[i] = 0;
           }
-          const crackleSource = this.ctx.createBufferSource();
+          const crackleSource = ctx.createBufferSource();
           crackleSource.buffer = crackleBuffer;
           crackleSource.loop = true;
-          const crackleFilter = this.ctx.createBiquadFilter();
+          const crackleFilter = ctx.createBiquadFilter();
           crackleFilter.type = 'highpass';
           crackleFilter.frequency.value = 5000;
-          const crackleGain = this.ctx.createGain();
+          const crackleGain = ctx.createGain();
           crackleGain.gain.value = 6.0; 
           crackleSource.connect(crackleFilter);
           crackleFilter.connect(crackleGain);
@@ -201,11 +207,11 @@ export class NoiseSynth {
           elements.push(crackleSource);
       } else if (type === 'stream') {
           const noise = this.createPinkNoise();
-          const filter = this.ctx.createBiquadFilter();
+          const filter = ctx.createBiquadFilter();
           filter.type = 'bandpass';
           filter.frequency.value = 1500;
           filter.Q.value = 0.5;
-          const gain = this.ctx.createGain();
+          const gain = ctx.createGain();
           gain.gain.value = 4.0;
           noise.connect(filter);
           filter.connect(gain);
@@ -214,19 +220,19 @@ export class NoiseSynth {
           elements.push(noise);
       } else if (type === 'train') {
           const noise = this.createBrownNoise();
-          const filter = this.ctx.createBiquadFilter();
+          const filter = ctx.createBiquadFilter();
           filter.type = 'lowpass';
           filter.frequency.value = 400;
           
-          const lfo = this.ctx.createOscillator();
+          const lfo = ctx.createOscillator();
           lfo.type = 'square';
           lfo.frequency.value = 4; // fast chunks
-          const lfoGain = this.ctx.createGain();
+          const lfoGain = ctx.createGain();
           lfoGain.gain.value = 200;
           lfo.connect(lfoGain);
           lfoGain.connect(filter.frequency);
           
-          const noiseGain = this.ctx.createGain();
+          const noiseGain = ctx.createGain();
           noiseGain.gain.value = 3.0;
           noise.connect(filter);
           filter.connect(noiseGain);
@@ -236,10 +242,10 @@ export class NoiseSynth {
           elements.push(noise, lfo);
       } else if (type === 'birds') {
           const windNoise = this.createBrownNoise();
-          const windFilter = this.ctx.createBiquadFilter();
+          const windFilter = ctx.createBiquadFilter();
           windFilter.type = 'lowpass';
           windFilter.frequency.value = 300;
-          const windGain = this.ctx.createGain();
+          const windGain = ctx.createGain();
           windGain.gain.value = 0.4;
           windNoise.connect(windFilter);
           windFilter.connect(windGain);
@@ -250,14 +256,14 @@ export class NoiseSynth {
           const makeBird = () => {
               if (!this.nodes[type]) return;
 
-              const osc = this.ctx.createOscillator();
+              const osc = ctx.createOscillator();
               osc.type = 'sine';
-              const birdGain = this.ctx.createGain();
+              const birdGain = ctx.createGain();
               birdGain.gain.value = 0;
               osc.connect(birdGain);
               birdGain.connect(masterGain);
               
-              const now = this.ctx.currentTime;
+              const now = ctx.currentTime;
               osc.start(now);
               
               const chirps = 1 + Math.floor(Math.random() * 3);
@@ -285,11 +291,11 @@ export class NoiseSynth {
           setTimeout(makeBird, 2000);
       } else if (type === 'keyboard') {
           const keyNoise = this.createWhiteNoise();
-          const keyFilter = this.ctx.createBiquadFilter();
+          const keyFilter = ctx.createBiquadFilter();
           keyFilter.type = 'bandpass';
           keyFilter.frequency.value = 1500;
           keyFilter.Q.value = 1.0;
-          const keyGain = this.ctx.createGain();
+          const keyGain = ctx.createGain();
           keyGain.gain.value = 0;
           keyNoise.connect(keyFilter);
           keyFilter.connect(keyGain);
@@ -302,7 +308,7 @@ export class NoiseSynth {
           const typeCharacter = () => {
               if (!this.nodes[type]) return;
               if (isTyping) {
-                  const now = this.ctx.currentTime;
+                  const now = ctx.currentTime;
                   keyGain.gain.cancelScheduledValues(now);
                   keyGain.gain.setValueAtTime(0, now);
                   keyGain.gain.linearRampToValueAtTime(0.6 + Math.random() * 0.4, now + 0.005);
@@ -325,9 +331,9 @@ export class NoiseSynth {
           
           typeWord();
       } else if (type === 'clock') {
-          const tickOsc = this.ctx.createOscillator();
+          const tickOsc = ctx.createOscillator();
           tickOsc.type = 'sine';
-          const tickGain = this.ctx.createGain();
+          const tickGain = ctx.createGain();
           tickGain.gain.value = 0;
           tickOsc.connect(tickGain);
           tickGain.connect(masterGain);
@@ -335,10 +341,10 @@ export class NoiseSynth {
           elements.push(tickOsc);
           
           const tickNoise = this.createWhiteNoise();
-          const tickNoiseFilter = this.ctx.createBiquadFilter();
+          const tickNoiseFilter = ctx.createBiquadFilter();
           tickNoiseFilter.type = 'highpass';
           tickNoiseFilter.frequency.value = 3500;
-          const tickNoiseGain = this.ctx.createGain();
+          const tickNoiseGain = ctx.createGain();
           tickNoiseGain.gain.value = 0;
           tickNoise.connect(tickNoiseFilter);
           tickNoiseFilter.connect(tickNoiseGain);
@@ -350,7 +356,7 @@ export class NoiseSynth {
 
           const tick = () => {
               if (!this.nodes[type]) return;
-              const now = this.ctx.currentTime;
+              const now = ctx.currentTime;
               
               const isTock = tickCount % 2 !== 0;
               tickCount++;
@@ -375,7 +381,7 @@ export class NoiseSynth {
       } else {
           // Default
           const noise = this.createBrownNoise();
-          const gain = this.ctx.createGain();
+          const gain = ctx.createGain();
           gain.gain.value = 1.0;
           noise.connect(gain);
           gain.connect(masterGain);
@@ -390,15 +396,17 @@ export class NoiseSynth {
       if (type === 'rain') maxVol = 1.2;
       if (type === 'birds' || type === 'keyboard' || type === 'clock') maxVol = 0.8;
       
-      masterGain.gain.setTargetAtTime(maxVol, this.ctx.currentTime, 1.0);
+      masterGain.gain.setTargetAtTime(maxVol, ctx.currentTime, 1.0);
    }
    
    stop(type: string) {
        const node = this.nodes[type];
        if (!node) return;
+       const ctx = this.ctx;
+       if (!ctx) return;
        
        // Fade out
-       node.masterGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.5);
+       node.masterGain.gain.setTargetAtTime(0, ctx.currentTime, 0.5);
        setTimeout(() => {
            node.elements.forEach((el: any) => {
                try { el.stop(); } catch(e) {}

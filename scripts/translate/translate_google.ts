@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 async function run() {
-    const dict = JSON.parse(fs.readFileSync('dict.json', 'utf-8'));
+    const dict = JSON.parse(fs.readFileSync('src/dict-zh.json', 'utf-8'));
     const keys = Object.keys(dict);
     const translatedDict = {};
 
